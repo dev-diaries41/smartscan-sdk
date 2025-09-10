@@ -5,11 +5,14 @@ import android.content.Context
 
 class MemoryUtils(
     private val context: Context,
-    private val lowMemoryThreshold: Long = 800L * 1024 * 1024,
-    private val highMemoryThreshold: Long = 1_600L * 1024 * 1024,
-    private val minConcurrency: Int = 1,
-    private val maxConcurrency: Int = 4
+    memoryOptions: MemoryOptions? = null
 ) {
+    private val memoryOptions = MemoryOptions().copy(
+        lowMemoryThreshold = memoryOptions?.lowMemoryThreshold ?: MemoryOptions().lowMemoryThreshold,
+        highMemoryThreshold = memoryOptions?.highMemoryThreshold ?: MemoryOptions().highMemoryThreshold,
+        minConcurrency = memoryOptions?.minConcurrency ?: MemoryOptions().minConcurrency,
+        maxConcurrency = memoryOptions?.maxConcurrency ?: MemoryOptions().maxConcurrency,
+    )
 
     fun getFreeMemory(): Long {
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -21,13 +24,20 @@ class MemoryUtils(
     fun calculateConcurrencyLevel(): Int {
         val freeMemory = getFreeMemory()
         return when {
-            freeMemory < lowMemoryThreshold -> minConcurrency
-            freeMemory >= highMemoryThreshold -> maxConcurrency
+            freeMemory < memoryOptions.lowMemoryThreshold -> memoryOptions.minConcurrency
+            freeMemory >= memoryOptions.highMemoryThreshold -> memoryOptions.maxConcurrency
             else -> {
-                val proportion = (freeMemory - lowMemoryThreshold).toDouble() /
-                        (highMemoryThreshold - lowMemoryThreshold)
-                (minConcurrency + proportion * (maxConcurrency - minConcurrency)).toInt().coerceAtLeast(minConcurrency)
+                val proportion = (freeMemory - memoryOptions.lowMemoryThreshold).toDouble() /
+                        (memoryOptions.highMemoryThreshold - memoryOptions.lowMemoryThreshold)
+                (memoryOptions.minConcurrency + proportion * (memoryOptions.maxConcurrency - memoryOptions.minConcurrency)).toInt().coerceAtLeast(memoryOptions.minConcurrency)
             }
         }
     }
 }
+
+data class MemoryOptions(
+    val lowMemoryThreshold: Long = 800L * 1024 * 1024,
+    val highMemoryThreshold: Long = 1_600L * 1024 * 1024,
+    val minConcurrency: Int = 1,
+    val maxConcurrency: Int = 4
+)
