@@ -81,15 +81,15 @@ class ProcessorManager<T, R>(
 }
 
 interface IProcessor<T, R> {
-    fun onProgress(processedCount: Int, total: Int)
-    fun onComplete(context: Context, totalProcessed: Int, processingTime: Long)
-    fun onBatchComplete(context: Context, batch: List<R>)
-    fun onProcess(context: Context, item: T): R
+    suspend fun onProgress(processedCount: Int, total: Int)
+    suspend fun onComplete(context: Context, totalProcessed: Int, processingTime: Long)
+    suspend fun onBatchComplete(context: Context, batch: List<R>)
+    suspend fun onProcess(context: Context, item: T): R
     fun onProcessError(context: Context, error: Exception, item: T){
 //         replace item.toString with id once i update T to have id
         Log.e(ProcessorManager.TAG, "Error processing item: ${error.message + "\n" + item.toString()}", error)
     }
-    fun onError(context: Context, error: Exception){
+    suspend fun onError(context: Context, error: Exception){
         Log.e(ProcessorManager.TAG, "Error processing items: ${error.message}", error)
     }
 }

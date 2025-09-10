@@ -1,6 +1,5 @@
 package com.fpf.smartscansdk.processors
 
-import android.app.Application
 import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
@@ -11,109 +10,57 @@ import android.util.Log
 import com.fpf.smartscansdk.clip.Embedder
 import com.fpf.smartscansdk.utils.IMAGE_SIZE_X
 import com.fpf.smartscansdk.utils.IMAGE_SIZE_Y
-import com.fpf.smartscansdk.utils.MemoryUtils
 import com.fpf.smartscansdk.clip.Embedding
 import com.fpf.smartscansdk.clip.appendEmbeddingsToFile
 import com.fpf.smartscansdk.clip.loadEmbeddingsFromFile
 import com.fpf.smartscansdk.clip.saveEmbeddingsToFile
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
+
 
 class VideoIndexer(
-    private val application: Application,
-    private val listener: IIndexListener? = null
-) {
+    private val context: Context,
+    private val embedder: Embedder,
+): IProcessor<Long, Embedding> {
+
     companion object {
         private const val TAG = "VideoIndexer"
-        private const val BATCH_SIZE = 10
         const val INDEX_FILENAME = "video_index.bin"
     }
 
+    val file = File(context.filesDir, INDEX_FILENAME)
 
 
-    suspend fun run(ids: List<Long>, embeddingHandler: Embedder): Int = withContext(Dispatchers.IO) {
-        val processedCount = AtomicInteger(0)
-        val startTime = System.currentTimeMillis()
+    override suspend fun onProgress(processedCount: Int, total: Int) {
+        TODO("Not yet implemented")
+    }
 
-        try {
-            if (ids.isEmpty()) {
-                Log.d(TAG, "No videos to index.")
-                return@withContext 0
-            }
-            val file = File(application.filesDir, INDEX_FILENAME)
+    override suspend fun onComplete(context: Context, totalProcessed: Int, processingTime: Long
+    ) {
+        TODO("Not yet implemented")
+//        purge(idsToPurge, file)
+    }
 
-            val existingIds: Set<Long> = if(file.exists()){ loadEmbeddingsFromFile(file)
-                .map { it.id }
-                .toSet()
-            } else emptySet<Long>()
-            val videosToProcess = ids.filterNot { existingIds.contains(it) }
-            val idsToPurge = existingIds.minus(ids.toSet()).toList()
+    override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
+        appendEmbeddingsToFile(file, batch)
+    }
 
-            var totalProcessed = 0
+    override suspend fun onProcess(context: Context, id: Long): Embedding {
+        val contentUri = ContentUris.withAppendedId(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id
+        )
+        val frameBitmaps = extractFramesFromVideo(context, contentUri)
 
-            val memoryUtils = MemoryUtils(application)
+        if(frameBitmaps == null) throw IllegalStateException("Invalid frames")
 
-            for (batch in videosToProcess.chunked(10)) {
-                val currentConcurrency = memoryUtils.calculateConcurrencyLevel()
-                // Log.i(TAG, "Current allowed concurrency: $currentConcurrency | Free Memory: ${memoryUtils.getFreeMemory() / (1024 * 1024)} MB")
+        val embedding: FloatArray = embedder.generatePrototypeEmbedding(context, frameBitmaps)
 
-                val semaphore = Semaphore(currentConcurrency)
-                val batchEmb = ArrayList<Embedding>(BATCH_SIZE)
-
-                val deferredResults = batch.map { id ->
-                    async {
-                        semaphore.withPermit {
-                            try {
-                                val contentUri = ContentUris.withAppendedId(
-                                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id
-                                )
-                                val frameBitmaps = extractFramesFromVideo(application, contentUri)
-
-                                if(frameBitmaps == null) return@async 0
-
-                                val embedding: FloatArray = embeddingHandler.generatePrototypeEmbedding(application, frameBitmaps)
-
-                                batchEmb.add(
-                                    Embedding(
-                                        id = id,
-                                        date = System.currentTimeMillis(),
-                                        embeddings = embedding
-                                    )
-                                )
-                                val current = processedCount.incrementAndGet()
-                                listener?.onProgress(current, videosToProcess.size)
-                                return@async 1
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Failed to process video $id", e)
-                            }
-                            return@async 0
-                        }
-                    }
-                }
-                totalProcessed += deferredResults.awaitAll().sum()
-                appendEmbeddingsToFile(file, batchEmb)
-            }
-            val endTime = System.currentTimeMillis()
-            val completionTime = endTime - startTime
-            listener?.onComplete(application, totalProcessed, completionTime)
-            purge(idsToPurge, file)
-            totalProcessed
-        }
-        catch (e: CancellationException) {
-            throw e
-        }
-        catch (e: Exception) {
-            listener?.onError(application, e)
-            Log.e(TAG, "Error indexing videos: ${e.message}", e)
-            0
-        }
+        return Embedding(
+            id = id,
+            date = System.currentTimeMillis(),
+            embeddings = embedding
+        )
     }
 
     private fun extractFramesFromVideo(context: Context, videoUri: Uri, frameCount: Int = 10): List<Bitmap>? {
@@ -163,5 +110,4 @@ class VideoIndexer(
             Log.e(TAG, "Error purging embeddings", e)
         }
     }
-
 }
