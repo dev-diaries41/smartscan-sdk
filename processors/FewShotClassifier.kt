@@ -15,8 +15,7 @@ class FewShotClassifier(
     ): IProcessor<String, ClassificationResult> {
 
     companion object {
-        private const val TAG = "Organiser"
-        private const val PREF_KEY_LAST_USED_CLASSIFICATION_DIRS = "last_used_destinations"
+        const val TAG = "FewShotClassifier"
     }
 
     override suspend fun onProgress(processedCount: Int, total: Int) {
