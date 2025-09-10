@@ -175,7 +175,7 @@ suspend fun fetchBitmapsFromDirectory(context: Context, directoryUri: Uri, limit
 fun openImageInGallery(context: Context, uri: Uri) {
     val intent = Intent(Intent.ACTION_VIEW).apply {
         setDataAndType(uri, "image/*")
-        Intent.setFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
     }
     context.startActivity(intent)
 }
