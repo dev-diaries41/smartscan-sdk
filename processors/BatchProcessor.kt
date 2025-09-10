@@ -14,16 +14,16 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
-class BatchProcessor<T, R>(
+class BatchProcessor<TInput, TOutput>(
     private val application: Application,
-    private val processor: IProcessor<T, R>? = null,
+    private val processor: IProcessor<TInput, TOutput>? = null,
     private val options: ProcessOptions = ProcessOptions(),
 ) {
     companion object {
         const val TAG = "Processor"
     }
 
-    suspend fun run(items: List<T>): Int = withContext(Dispatchers.IO) {
+    suspend fun run(items: List<TInput>): Int = withContext(Dispatchers.IO) {
         val processedCount = AtomicInteger(0)
         val startTime = System.currentTimeMillis()
 
@@ -42,7 +42,7 @@ class BatchProcessor<T, R>(
                 // Log.i(TAG, "Current allowed concurrency: $currentConcurrency | Free Memory: ${memoryUtils.getFreeMemory() / (1024 * 1024)} MB")
 
                 val semaphore = Semaphore(currentConcurrency)
-                val outputBatch = ArrayList<R>(options.batchSize)
+                val outputBatch = ArrayList<TOutput>(options.batchSize)
                 val deferredResults = batch.map { item ->
                     async {
                         semaphore.withPermit {
