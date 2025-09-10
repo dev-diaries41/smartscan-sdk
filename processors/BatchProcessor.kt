@@ -1,6 +1,7 @@
 package com.fpf.smartscansdk.processors
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import com.fpf.smartscansdk.utils.MemoryOptions
 import com.fpf.smartscansdk.utils.MemoryUtils
@@ -85,3 +86,16 @@ data class ProcessOptions(
     val batchSize: Int = 10
 )
 
+interface IProcessor<T, R> {
+    suspend fun onProgress(processedCount: Int, total: Int)
+    suspend fun onComplete(context: Context, totalProcessed: Int, processingTime: Long)
+    suspend fun onBatchComplete(context: Context, batch: List<R>): List<R>
+    suspend fun onProcess(context: Context, item: T): R
+    fun onProcessError(context: Context, error: Exception, item: T){
+//         replace item.toString with id once i update T to have id
+        Log.e(BatchProcessor.TAG, "Error processing item: ${error.message + "\n" + item.toString()}", error)
+    }
+    suspend fun onError(context: Context, error: Exception){
+        Log.e(BatchProcessor.TAG, "Error processing items: ${error.message}", error)
+    }
+}
