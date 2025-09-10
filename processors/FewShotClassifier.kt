@@ -25,10 +25,10 @@ class FewShotClassifier(
     override suspend fun onComplete(context: Context, totalProcessed: Int, processingTime: Long
     ) {
         TODO("Not yet implemented")
-//        purge(idsToPurge, file)
     }
 
-    override suspend fun onBatchComplete(context: Context, batch: List<ClassificationResult>) {
+    override suspend fun onBatchComplete(context: Context, batch: List<ClassificationResult>): List<ClassificationResult> {
+        return batch
     }
 
     override suspend fun onProcess(context: Context, imageUri: String): ClassificationResult{
