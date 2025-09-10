@@ -13,7 +13,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
-class ProcessorManager<T, R>(
+class BatchProcessor<T, R>(
     private val application: Application,
     private val processor: IProcessor<T, R>? = null,
     private val options: ProcessOptions = ProcessOptions(),
