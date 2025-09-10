@@ -2,6 +2,7 @@ package com.fpf.smartscansdk.processors
 
 import android.app.Application
 import android.util.Log
+import com.fpf.smartscansdk.utils.MemoryOptions
 import com.fpf.smartscansdk.utils.MemoryUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class ProcessorManager<T, R>(
     private val application: Application,
     private val processor: IProcessor<T, R>? = null,
-    private val batchSize: Int = 10,
+    private val options: ProcessOptions = ProcessOptions(),
 ) {
     companion object {
         const val TAG = "Processor"
@@ -33,21 +34,21 @@ class ProcessorManager<T, R>(
 
             var totalProcessed = 0
 
-            val memoryUtils = MemoryUtils(application.applicationContext)
+            val memoryUtils = MemoryUtils(application.applicationContext, options.memory)
 
-            for (batch in items.chunked(batchSize)) {
+            for (batch in items.chunked(options.batchSize)) {
                 val currentConcurrency = memoryUtils.calculateConcurrencyLevel()
                 // Log.i(TAG, "Current allowed concurrency: $currentConcurrency | Free Memory: ${memoryUtils.getFreeMemory() / (1024 * 1024)} MB")
 
                 val semaphore = Semaphore(currentConcurrency)
-                val batchEmb = ArrayList<R>(batchSize)
+                val outputBatch = ArrayList<R>(options.batchSize)
                 val deferredResults = batch.map { item ->
                     async {
                         semaphore.withPermit {
                             try {
-                                val returnVal = processor?.onProcess(application, item)
-                                if(returnVal != null){
-                                    batchEmb.add(returnVal)
+                                val output = processor?.onProcess(application, item)
+                                if(output != null){
+                                    outputBatch.add(output)
                                 }
 
                                 val current = processedCount.incrementAndGet()
@@ -62,7 +63,7 @@ class ProcessorManager<T, R>(
                 }
 
                 totalProcessed += deferredResults.awaitAll().sum()
-                processor?.onBatchComplete(application, batchEmb)
+                processor?.onBatchComplete(application, outputBatch)
             }
             val endTime = System.currentTimeMillis()
             val completionTime = endTime - startTime
@@ -78,3 +79,9 @@ class ProcessorManager<T, R>(
         }
     }
 }
+
+data class ProcessOptions(
+    val memory: MemoryOptions = MemoryOptions(),
+    val batchSize: Int = 10
+)
+
