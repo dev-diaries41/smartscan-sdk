@@ -87,8 +87,13 @@ class BatchProcessor<TInput, TOutput>(
             _status.value = ProcessorStatus.FAILED
             metrics
         }
-
     }
+
+    fun resetProgress() {
+        _progress.value = 0f
+        _status.value = ProcessorStatus.IDLE
+    }
+
 }
 
 
