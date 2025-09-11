@@ -3,6 +3,7 @@ package com.fpf.smartscansdk.core.ml.embeddings.clip
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
+import android.app.Application
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
@@ -17,10 +18,9 @@ import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.DIM_PIXEL_SIZE
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.core.ml.embeddings.normalizeL2
-import com.fpf.smartscansdk.core.utils.MemoryUtils
+import com.fpf.smartscansdk.core.processors.BatchProcessor
+import com.fpf.smartscansdk.core.processors.IProcessor
 import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.LongBuffer
@@ -78,25 +78,24 @@ class ClipEmbedder(
                 normalizeL2((output.values.first() as Array<FloatArray>)[0])
             }
         }
-
     override suspend fun generatePrototypeEmbedding(context: Context, bitmaps: List<Bitmap>): FloatArray =
         withContext(Dispatchers.Default) {
             if (bitmaps.isEmpty()) throw IllegalArgumentException("Bitmap list is empty")
 
-            val memoryUtils = MemoryUtils(context)
             val allEmbeddings = mutableListOf<FloatArray>()
 
-            for (chunk in bitmaps.chunked(10)) {
-                val semaphore = Semaphore(memoryUtils.calculateConcurrencyLevel())
-                val deferred = chunk.map { bmp ->
-                    async {
-                        semaphore.withPermit {
-                            try { generateImageEmbedding(bmp) } catch (_: Exception) { null }
-                        }
-                    }
+            val iProcessor = object : IProcessor<Bitmap, FloatArray?> {
+                override suspend fun onProcess(context: Context, item: Bitmap): FloatArray? {
+                    return try { generateImageEmbedding(item) } catch (_: Exception) { null }
                 }
-                allEmbeddings.addAll(deferred.awaitAll().filterNotNull())
+
+                override suspend fun onBatchComplete(context: Context, outputBatch: List<FloatArray?>) {
+                    allEmbeddings.addAll(outputBatch.filterNotNull())
+                }
             }
+
+            val processor = BatchProcessor<Bitmap, FloatArray?>(context.applicationContext as Application, iProcessor)
+            processor.run(bitmaps)
 
             if (allEmbeddings.isEmpty()) throw IllegalStateException("No embeddings generated")
             val embeddingLength = allEmbeddings[0].size
@@ -105,6 +104,7 @@ class ClipEmbedder(
 
             normalizeL2(FloatArray(embeddingLength) { i -> sum[i] / allEmbeddings.size })
         }
+
 
     override fun closeSession() {
         if (closed) return
