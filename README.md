@@ -88,11 +88,18 @@ implementation("com.github.dev-diaries41:extensions:1.0.0")
 
 ## **Design Choices**
 
-* `core` = **lean runtime layer** → preprocessing, model execution, embeddings, minimal indexing.
-* `extensions` = **innovation layer** → file-based embedding stores, OCR, multimodal models, indexing, new retrieval methods.
-* `ml` = the heart — all model-related logic goes here, grouped by task (`embeddings`, `clip`, `models`).
+### Design Constraints
+* For offline on-device vector search, the full index needs to be loaded in-memory due to lack of native vectordb for android.
+* For processing a healthy balance between speed and memory/cpu usage is required to satisfy good UX and adapt to constraint CPU and Memory resources
+
+## Key Aspects
+* **core**: Minimal essential functionality, primarily focused on fundamental ML logic, Interfaces and efficient pipelines processing.
+* **extensions** = Innovation layer, primarily focused on implementation heavy logic e.g  file-based embedding stores, OCR, multimodal models, indexing, new retrieval methods.
+* **ml** = the heart — all model-related logic goes here, grouped by task (e.g.,`embeddings`, `models`).
 * **Efficient on-device processing:** The `BatchProcessor` and `IProcessor` design provides a consistent, structured way to handle CPU- and memory-intensive tasks concurrently. This is especially important for edge devices running ML workloads. Users can implement `IProcessor` instances to represent such intensive tasks, while `BatchProcessor` manages batching, concurrency, memory usage, and progress reporting in a safe and efficient manner.
 * Focus on **running efficiently on-device** (mobile CPUs, GPUs, NNAPI).
+
+
 
 ---
 
