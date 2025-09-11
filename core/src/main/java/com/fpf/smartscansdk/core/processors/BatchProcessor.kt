@@ -1,19 +1,18 @@
 package com.fpf.smartscansdk.core.processors
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import com.fpf.smartscansdk.core.utils.MemoryUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
-class BatchProcessor<TInput, TOutput>(
+open class BatchProcessor<TInput, TOutput>(
     private val application: Application,
     private val processor: IProcessor<TInput, TOutput>? = null,
     private val options: ProcessOptions = ProcessOptions(),
@@ -22,21 +21,13 @@ class BatchProcessor<TInput, TOutput>(
         const val TAG = "BatchProcessor"
     }
 
-    private val _progress: MutableStateFlow<Float> = MutableStateFlow(0f)
-    val progress: StateFlow<Float> = _progress
-
-    private val _status = MutableStateFlow<ProcessorStatus>(ProcessorStatus.IDLE)
-    val status: StateFlow<ProcessorStatus> = _status
-
-    suspend fun run(items: List<TInput>): Metrics = withContext(Dispatchers.IO) {
+    open suspend fun run(items: List<TInput>): Metrics = withContext(Dispatchers.IO) {
         val processedCount = AtomicInteger(0)
         val startTime = System.currentTimeMillis()
-        _status.value = ProcessorStatus.ACTIVE
 
         try {
             if (items.isEmpty()) {
                 Log.w(TAG, "No items to process.")
-                _status.value = ProcessorStatus.COMPLETE
                 return@withContext Metrics.Success()
             }
 
@@ -52,7 +43,8 @@ class BatchProcessor<TInput, TOutput>(
                             try {
                                 val output = processor?.onProcess(application, item)
                                 val current = processedCount.incrementAndGet()
-                                _progress.value = (current * 100f) / items.size
+                                val progress = (current * 100f) / items.size
+                                onProgress(application, progress)
                                 output
                             } catch (e: Exception) {
                                 processor?.onProcessError(application, e, item)
@@ -70,7 +62,6 @@ class BatchProcessor<TInput, TOutput>(
             val metrics = Metrics.Success(processedCount.get(), timeElapsed = endTime - startTime)
 
             processor?.onComplete(application, metrics)
-            _status.value = ProcessorStatus.COMPLETE
             metrics
         }
         catch (e: CancellationException) {
@@ -83,15 +74,11 @@ class BatchProcessor<TInput, TOutput>(
                 error = e
             )
             processor?.onError(application, metrics)
-            _status.value = ProcessorStatus.FAILED
             metrics
         }
     }
 
-    fun resetProgress() {
-        _progress.value = 0f
-        _status.value = ProcessorStatus.IDLE
-    }
+    open suspend fun onProgress(context: Context, progress: Float){}
 
 }
 
