@@ -1,4 +1,4 @@
-package com.fpf.smartscansdk.core.ml.models.embeddings.clip
+package com.fpf.smartscansdk.core.ml.embeddings.clip
 
 import android.graphics.Bitmap
 import com.fpf.smartscansdk.core.utils.centerCrop

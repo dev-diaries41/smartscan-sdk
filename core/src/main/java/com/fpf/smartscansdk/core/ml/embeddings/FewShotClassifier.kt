@@ -1,11 +1,11 @@
-package com.fpf.smartscansdk.core.ml.models.embeddings
+package com.fpf.smartscansdk.core.ml.embeddings
 
 import android.content.Context
 import androidx.core.net.toUri
 import com.fpf.smartscansdk.core.utils.getBitmapFromUri
 
-suspend fun classify(context: Context, imageUri: String, embedder: ImageEmbeddingProvider, prototypeList: List<PrototypeEmbedding>,): ClassificationResult{
-    val bitmap = getBitmapFromUri(context, imageUri.toUri())
+suspend fun classify(context: Context, imageUri: String, embedder: ImageEmbeddingProvider, prototypeList: List<PrototypeEmbedding>, maxSize: Int): ClassificationResult{
+    val bitmap = getBitmapFromUri(context, imageUri.toUri(), maxSize)
     val imageEmbedding = embedder.generateImageEmbedding(bitmap)
     bitmap.recycle()
 

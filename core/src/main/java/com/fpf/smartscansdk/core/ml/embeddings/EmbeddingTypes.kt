@@ -1,4 +1,4 @@
-package com.fpf.smartscansdk.core.ml.models.embeddings
+package com.fpf.smartscansdk.core.ml.embeddings
 
 import android.content.Context
 import android.graphics.Bitmap
