@@ -82,7 +82,7 @@ class BatchProcessor<TInput, TOutput>(
                 timeElapsed = System.currentTimeMillis() - startTime,
                 error = e
             )
-            processor?.onError(application, e)
+            processor?.onError(application, metrics)
             _status.value = ProcessorStatus.FAILED
             metrics
         }
