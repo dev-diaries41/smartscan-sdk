@@ -17,8 +17,8 @@ data class ProcessOptions(
 )
 
 interface IProcessor<TInput, TOutput> {
-    suspend fun onComplete(context: Context, metrics: Metrics.Success)
-    suspend fun onBatchComplete(context: Context, batch: List<TOutput>)
+    suspend fun onComplete(context: Context, metrics: Metrics.Success){}
+    suspend fun onBatchComplete(context: Context, batch: List<TOutput>){}
     suspend fun onProcess(context: Context, item: TInput): TOutput
     fun onProcessError(context: Context, error: Exception, item: TInput) {}
     suspend fun onError(context: Context, failureMetrics: Metrics.Failure) {}
