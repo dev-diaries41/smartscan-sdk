@@ -11,7 +11,6 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
 class ImageIndexer(
-    private val context: Context,
     private val embedder: Embedder,
     private val store: FileEmbeddingStore
 ): IProcessor<Long, Embedding> {

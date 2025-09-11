@@ -14,7 +14,6 @@ import com.fpf.smartscansdk.clip.Embedding
 import com.fpf.smartscansdk.clip.FileEmbeddingStore
 
 class VideoIndexer(
-    private val context: Context,
     private val embedder: Embedder,
     private val store: FileEmbeddingStore
 ): IProcessor<Long, Embedding> {
