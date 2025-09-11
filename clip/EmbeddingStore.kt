@@ -12,14 +12,14 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
-class EmbeddingStore(private val file: File, private val embeddingLength: Int){
+class EmbeddingStore(private val file: File, private val embeddingLength: Int): IEmbeddingStore{
 
     companion object {
         const val CLIP_EMBEDDING_LENGTH = 512
         const val TAG = "EmbeddingStore"
     }
 
-    suspend fun save(embeddingsList: List<Embedding>) = withContext(Dispatchers.IO){
+    override suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO){
         // total bytes: 4 (count) + per-entry (id(8) + date(8) + EMBEDDING_LEN*4)
         val totalBytes = 4 + embeddingsList.size * (8 + 8 + embeddingLength * 4)
         val buffer = ByteBuffer.allocate(totalBytes).order(ByteOrder.LITTLE_ENDIAN)
@@ -42,7 +42,7 @@ class EmbeddingStore(private val file: File, private val embeddingLength: Int){
         }
     }
 
-    suspend fun load(): List<Embedding> = withContext(Dispatchers.IO){
+    override suspend fun load(): List<Embedding> = withContext(Dispatchers.IO){
         FileInputStream(file).channel.use { ch ->
             val fileSize = ch.size()
             val buffer = ch.map(FileChannel.MapMode.READ_ONLY, 0, fileSize).order(ByteOrder.LITTLE_ENDIAN)
@@ -64,7 +64,7 @@ class EmbeddingStore(private val file: File, private val embeddingLength: Int){
         }
     }
 
-    suspend fun append(newEmbeddings: List<Embedding>) = withContext(Dispatchers.IO) {
+    override suspend fun append(newEmbeddings: List<Embedding>): Unit = withContext(Dispatchers.IO) {
         if (!file.exists()) {
             save(newEmbeddings)
             return@withContext
@@ -119,7 +119,7 @@ class EmbeddingStore(private val file: File, private val embeddingLength: Int){
         }
     }
 
-    suspend fun remove(ids: List<Long>) = withContext(Dispatchers.IO) {
+    override suspend fun remove(ids: List<Long>): Unit = withContext(Dispatchers.IO) {
         if (ids.isEmpty()) return@withContext
 
         try {

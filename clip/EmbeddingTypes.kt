@@ -11,3 +11,10 @@ data class PrototypeEmbedding(
     val date: Long,
     val embeddings: FloatArray
 )
+
+interface IEmbeddingStore {
+    suspend fun save(embeddings: List<Embedding>)
+    suspend fun load(): List<Embedding>
+    suspend fun append(newEmbeddings: List<Embedding>)
+    suspend fun remove(ids: List<Long>)
+}
