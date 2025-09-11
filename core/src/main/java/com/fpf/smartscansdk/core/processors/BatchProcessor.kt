@@ -1,7 +1,6 @@
 package com.fpf.smartscansdk.core.processors
 
 import android.app.Application
-import android.content.Context
 import android.util.Log
 import com.fpf.smartscansdk.core.utils.MemoryUtils
 import kotlinx.coroutines.CancellationException
@@ -12,6 +11,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
+// For BatchProcessor’s use case—long-running, batched,  asynchronous processing—the Application context should be used.
 open class BatchProcessor<TInput, TOutput>(
     private val application: Application,
     private val processor: IProcessor<TInput, TOutput>? = null,
@@ -31,7 +31,7 @@ open class BatchProcessor<TInput, TOutput>(
                 return@withContext Metrics.Success()
             }
 
-            val memoryUtils = MemoryUtils(application.applicationContext, options.memory)
+            val memoryUtils = MemoryUtils(application, options.memory)
 
             for (batch in items.chunked(options.batchSize)) {
                 val currentConcurrency = memoryUtils.calculateConcurrencyLevel()
@@ -44,7 +44,7 @@ open class BatchProcessor<TInput, TOutput>(
                                 val output = processor?.onProcess(application, item)
                                 val current = processedCount.incrementAndGet()
                                 val progress = (current * 100f) / items.size
-                                onProgress(application, progress)
+                                onProgress(progress)
                                 output
                             } catch (e: Exception) {
                                 processor?.onProcessError(application, e, item)
@@ -78,7 +78,7 @@ open class BatchProcessor<TInput, TOutput>(
         }
     }
 
-    open suspend fun onProgress(context: Context, progress: Float){}
+    open suspend fun onProgress(progress: Float){}
 
 }
 

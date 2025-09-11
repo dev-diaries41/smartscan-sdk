@@ -1,7 +1,6 @@
 package com.fpf.smartscansdk.core.processors
 
 import android.app.Application
-import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -31,7 +30,7 @@ class StateFlowBatchProcessor<TInput, TOutput>(
         return metrics
     }
 
-    override suspend fun onProgress(context: Context, progress: Float) {
+    override suspend fun onProgress(progress: Float) {
         _progress.value = progress
     }
 
