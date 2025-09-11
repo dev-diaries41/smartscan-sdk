@@ -7,9 +7,7 @@ import android.util.Log
 import com.fpf.smartscansdk.utils.getBitmapFromUri
 import com.fpf.smartscansdk.clip.Embedding
 import com.fpf.smartscansdk.clip.Embedder
-import com.fpf.smartscansdk.clip.appendEmbeddingsToFile
-import com.fpf.smartscansdk.clip.loadEmbeddingsFromFile
-import com.fpf.smartscansdk.clip.saveEmbeddingsToFile
+import com.fpf.smartscansdk.clip.EmbeddingStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
@@ -18,6 +16,7 @@ import java.io.File
 class ImageIndexer(
     private val context: Context,
     private val embedder: Embedder,
+    private val store: EmbeddingStore
 ): IProcessor<Long, Embedding> {
 
     companion object {
@@ -33,7 +32,7 @@ class ImageIndexer(
     }
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
-        appendEmbeddingsToFile(file, batch)
+        store.append(batch)
     }
 
     override suspend fun onProcess(context: Context, id: Long): Embedding {
@@ -55,9 +54,9 @@ class ImageIndexer(
         if (idsToPurge.isEmpty()) return@withContext
 
         try {
-            val embs = loadEmbeddingsFromFile(file)
+            val embs = store.load()
             val remaining = embs.filter { it.id !in idsToPurge }
-            saveEmbeddingsToFile(file, remaining)
+            store.save(remaining)
             Log.i(TAG, "Purged ${idsToPurge.size} stale embeddings")
         } catch (e: Exception) {
             Log.e(TAG, "Error purging embeddings", e)

@@ -11,9 +11,7 @@ import com.fpf.smartscansdk.clip.Embedder
 import com.fpf.smartscansdk.utils.IMAGE_SIZE_X
 import com.fpf.smartscansdk.utils.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.clip.Embedding
-import com.fpf.smartscansdk.clip.appendEmbeddingsToFile
-import com.fpf.smartscansdk.clip.loadEmbeddingsFromFile
-import com.fpf.smartscansdk.clip.saveEmbeddingsToFile
+import com.fpf.smartscansdk.clip.EmbeddingStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -22,6 +20,7 @@ import java.io.File
 class VideoIndexer(
     private val context: Context,
     private val embedder: Embedder,
+    private val store: EmbeddingStore
 ): IProcessor<Long, Embedding> {
 
     companion object {
@@ -37,7 +36,7 @@ class VideoIndexer(
     }
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
-        appendEmbeddingsToFile(file, batch)
+        store.append(batch)
     }
 
     override suspend fun onProcess(context: Context, id: Long): Embedding {
@@ -96,9 +95,9 @@ class VideoIndexer(
         if (idsToPurge.isEmpty()) return@withContext
 
         try {
-            val embs = loadEmbeddingsFromFile(file)
+            val embs = store.load()
             val remaining = embs.filter { it.id !in idsToPurge }
-            saveEmbeddingsToFile(file, remaining)
+            store.save(remaining)
             Log.i(TAG, "Purged ${idsToPurge.size} stale embeddings")
         } catch (e: Exception) {
             Log.e(TAG, "Error purging embeddings", e)
