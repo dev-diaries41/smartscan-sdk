@@ -31,13 +31,7 @@ class VideoIndexer(
 
     val file = File(context.filesDir, INDEX_FILENAME)
 
-
-    override suspend fun onProgress(processedCount: Int, total: Int) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun onComplete(context: Context, totalProcessed: Int, processingTime: Long
-    ) {
+    override suspend fun onComplete(context: Context, metrics: Metrics) {
         TODO("Not yet implemented")
 //        purge(idsToPurge, file)
     }

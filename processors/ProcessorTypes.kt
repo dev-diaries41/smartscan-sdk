@@ -17,10 +17,9 @@ data class ProcessOptions(
 )
 
 interface IProcessor<TInput, TOutput> {
-    val onProgress: (suspend (processedCount: Int, total: Int) -> Unit)?
-    val onComplete: (suspend (context: Context, metrics: Metrics) -> Unit)?
-    val onBatchComplete: (suspend (context: Context, batch: List<TOutput>) -> Unit)?
+    suspend fun onComplete(context: Context, metrics: Metrics)
+    suspend fun onBatchComplete(context: Context, batch: List<TOutput>)
     suspend fun onProcess(context: Context, item: TInput): TOutput
-    val onProcessError: ((context: Context, error: Exception, item: TInput) -> Unit)?
-    val onError: (suspend (context: Context, error: Exception) -> Unit)?
+    fun onProcessError(context: Context, error: Exception, item: TInput) {}
+    suspend fun onError(context: Context, error: Exception) {}
 }

@@ -53,10 +53,9 @@ class BatchProcessor<TInput, TOutput>(
                                 val output = processor?.onProcess(application, item)
                                 val current = processedCount.incrementAndGet()
                                 _progress.value = (current * 100f) / items.size
-                                processor?.onProgress?.invoke(current, items.size)
                                 output
                             } catch (e: Exception) {
-                                processor?.onProcessError?.invoke(application, e, item)
+                                processor?.onProcessError(application, e, item)
                                 null
                             }
                         }
@@ -64,13 +63,13 @@ class BatchProcessor<TInput, TOutput>(
                 }
 
                 val outputBatch = deferredResults.mapNotNull { it.await() }
-                processor?.onBatchComplete?.invoke(application, outputBatch)
+                processor?.onBatchComplete(application, outputBatch)
             }
 
             val endTime = System.currentTimeMillis()
             val metrics = Metrics.Success(processedCount.get(), timeElapsed = endTime - startTime)
 
-            processor?.onComplete?.invoke(application, metrics)
+            processor?.onComplete(application, metrics)
             _status.value = ProcessorStatus.COMPLETE
             metrics
         }
@@ -83,7 +82,7 @@ class BatchProcessor<TInput, TOutput>(
                 timeElapsed = System.currentTimeMillis() - startTime,
                 error = e
             )
-            processor?.onError?.invoke(application, e)
+            processor?.onError(application, e)
             _status.value = ProcessorStatus.FAILED
             metrics
         }
