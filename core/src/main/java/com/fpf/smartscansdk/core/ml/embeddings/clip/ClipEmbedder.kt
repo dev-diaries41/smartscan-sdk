@@ -1,8 +1,6 @@
 package com.fpf.smartscansdk.core.ml.embeddings.clip
 
 import ai.onnxruntime.OnnxTensor
-import ai.onnxruntime.OrtEnvironment
-import ai.onnxruntime.OrtSession
 import android.app.Application
 import android.content.Context
 import android.content.res.Resources
@@ -32,8 +30,8 @@ class ClipEmbedder(
     imageModelPath: String? = null,
     textModelPath: String? = null
 ) : ImageEmbeddingProvider, TextEmbeddingProvider {
-    private val imageModel: IModel? = imageModelPath?.let { OnnxModel().apply { loadModel(it) } }
-    private val textModel: IModel? = textModelPath?.let { OnnxModel().apply { loadModel(it) } }
+    private val imageModel: OnnxModel? = imageModelPath?.let { OnnxModel().apply { loadModel(it) } }
+    private val textModel: OnnxModel? = textModelPath?.let { OnnxModel().apply { loadModel(it) } }
 
     private val tokenizerVocab: Map<String, Int> = getVocab(resources)
     private val tokenizerMerges: HashMap<Pair<String, String>, Int> = getMerges(resources)
@@ -52,8 +50,9 @@ class ClipEmbedder(
             )
             val imgData = preProcess(bitmap)
 
-            OnnxTensor.createTensor(modelEnv(), imgData, inputShape).use { inputTensor ->
-                val inputName = requireNotNull(modelInputName(model))
+            OnnxTensor.createTensor(model.getEnv(), imgData, inputShape).use { inputTensor ->
+                val inputName = model.getInputNames()?.firstOrNull()
+                    ?: throw IllegalStateException("Model inputs not available")
                 val output = model.run(mapOf(inputName to inputTensor))
                 normalizeL2((output.values.first() as Array<FloatArray>)[0])
             }
@@ -72,8 +71,9 @@ class ClipEmbedder(
             }
             val inputShape = longArrayOf(1, 77)
 
-            OnnxTensor.createTensor(modelEnv(), inputIds, inputShape).use { inputTensor ->
-                val inputName = requireNotNull(modelInputName(model))
+            OnnxTensor.createTensor(model.getEnv(), inputIds, inputShape).use { inputTensor ->
+                val inputName = model.getInputNames()?.firstOrNull()
+                    ?: throw IllegalStateException("Model inputs not available")
                 val output = model.run(mapOf(inputName to inputTensor))
                 normalizeL2((output.values.first() as Array<FloatArray>)[0])
             }
@@ -134,12 +134,4 @@ class ClipEmbedder(
                 }
             }
         }
-
-    private fun modelEnv() = OrtEnvironment.getEnvironment()
-    private fun modelInputName(model: IModel): String? {
-        val impl = model as? OnnxModel ?: return null
-        val s = impl.javaClass.getDeclaredField("session").apply { isAccessible = true }
-            .get(impl) as? OrtSession
-        return s?.inputNames?.firstOrNull()
-    }
 }
