@@ -1,58 +1,14 @@
-package com.fpf.smartscansdk.utils
+package com.fpf.smartscansdk.core.utils
 
-import android.content.ContentUris
 import android.content.Context
-import android.content.Intent
 import android.graphics.*
 import android.net.Uri
-import android.provider.MediaStore
-import android.util.Log
 import android.util.LruCache
-import java.nio.FloatBuffer
 import androidx.core.graphics.scale
-import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.util.Locale
 
-const val DIM_BATCH_SIZE = 1
-const val DIM_PIXEL_SIZE = 3
-const val IMAGE_SIZE_X = 224
-const val IMAGE_SIZE_Y = 224
-const val DEFAULT_IMAGE_DISPLAY_SIZE = 1024
-
-fun preProcess(bitmap: Bitmap): FloatBuffer {
-    val cropped = centerCrop(bitmap, IMAGE_SIZE_X)
-
-    val numFloats = DIM_BATCH_SIZE * DIM_PIXEL_SIZE * IMAGE_SIZE_Y * IMAGE_SIZE_X
-    val byteBuffer = ByteBuffer
-        .allocateDirect(numFloats * 4)
-        .order(ByteOrder.nativeOrder())
-    val floatBuffer = byteBuffer.asFloatBuffer()
-    for (c in 0 until DIM_PIXEL_SIZE) {
-        for (y in 0 until IMAGE_SIZE_Y) {
-            for (x in 0 until IMAGE_SIZE_X) {
-                val px = cropped.getPixel(x, y)
-                val v = when (c) {
-                    0 -> (px shr 16 and 0xFF) / 255f  // R
-                    1 -> (px shr  8 and 0xFF) / 255f  // G
-                    else -> (px and 0xFF) / 255f  // B
-                }
-                val norm = when (c) {
-                    0 -> (v - 0.485f) / 0.229f
-                    1 -> (v - 0.456f) / 0.224f
-                    else -> (v - 0.406f) / 0.225f
-                }
-                floatBuffer.put(norm)
-            }
-        }
-    }
-    floatBuffer.rewind()
-    return floatBuffer
-}
 
 fun centerCrop(bitmap: Bitmap, imageSize: Int): Bitmap {
     val cropX: Int
@@ -115,7 +71,7 @@ object BitmapCache {
 
 
 
-suspend fun loadBitmapFromUri(context: Context, uri: Uri, maxSize: Int = DEFAULT_IMAGE_DISPLAY_SIZE): Bitmap? = withContext(Dispatchers.IO) {
+suspend fun loadBitmapFromUri(context: Context, uri: Uri, maxSize: Int): Bitmap? = withContext(Dispatchers.IO) {
     BitmapCache.get(uri) ?: try {
         val source = ImageDecoder.createSource(context.contentResolver, uri)
         val bitmap = ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
@@ -130,53 +86,10 @@ suspend fun loadBitmapFromUri(context: Context, uri: Uri, maxSize: Int = DEFAULT
     }
 }
 
-fun getBitmapFromUri(context: Context, uri: Uri, maxSize: Int = IMAGE_SIZE_X): Bitmap {
+fun getBitmapFromUri(context: Context, uri: Uri, maxSize: Int): Bitmap {
     val source = ImageDecoder.createSource(context.contentResolver, uri)
     return ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
         val (w, h) = getScaledDimensions(info.size.width, info.size.height, maxSize)
         decoder.setTargetSize(w, h)
     }.copy(Bitmap.Config.ARGB_8888, true)
 }
-
-
-fun getImageUriFromId(id: Long): Uri {
-    return ContentUris.withAppendedId(
-        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-        id
-    )
-}
-
-suspend fun fetchBitmapsFromDirectory(context: Context, directoryUri: Uri, limit: Int? = null): List<Bitmap> = withContext(Dispatchers.IO) {
-    val directory = DocumentFile.fromTreeUri(context, directoryUri)
-        ?: throw IllegalArgumentException("Invalid directory URI: $directoryUri")
-
-    val validExtensions = listOf("png", "jpg", "jpeg", "bmp", "gif")
-    val imageFiles = directory.listFiles()
-        .filter { doc ->
-            doc.isFile && (doc.name?.substringAfterLast('.', "")?.lowercase(Locale.getDefault()) in validExtensions)
-        }
-        .shuffled()
-        .let { if (limit != null) it.take(limit) else it }
-
-    if (imageFiles.isEmpty()) {
-        throw IllegalStateException("No valid image files found in directory: $directoryUri")
-    }
-
-    imageFiles.mapNotNull { doc ->
-        try {
-            getBitmapFromUri(context, doc.uri)
-        } catch (e: Exception) {
-            Log.e("BitmapFetch", "Failed to load image: ${doc.uri}", e)
-            null
-        }
-    }
-}
-
-fun openImageInGallery(context: Context, uri: Uri) {
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, "image/*")
-        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-    }
-    context.startActivity(intent)
-}
-

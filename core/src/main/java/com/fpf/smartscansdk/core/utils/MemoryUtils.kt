@@ -1,4 +1,4 @@
-package com.fpf.smartscansdk.utils
+package com.fpf.smartscansdk.core.utils
 
 import android.app.ActivityManager
 import android.content.Context
