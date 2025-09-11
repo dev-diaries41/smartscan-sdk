@@ -15,6 +15,10 @@ import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
 import com.fpf.smartscansdk.core.processors.IProcessor
 import com.fpf.smartscansdk.core.processors.Metrics
 
+// ** Design Constraint**: For on-device vector search, the full index needs to be loaded in-memory (or make an Android native VectorDB)
+// File-based EmbeddingStore is used over a Room version due to significant faster index loading
+// Benchmarks: Memory-Mapped File loading 30-50x speed vs Room (both LiveData and Synchronous),
+// These benchmarks strongly favour the  FileEmbeddingStore for optimal on-device search functionality and UX.
 
 class VideoIndexer(
     private val embedder: ClipEmbedder,
