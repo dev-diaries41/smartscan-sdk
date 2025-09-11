@@ -12,11 +12,11 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
-class EmbeddingStore(private val file: File, private val embeddingLength: Int): IEmbeddingStore{
+class FileEmbeddingStore(private val file: File, private val embeddingLength: Int): IEmbeddingStore{
 
     companion object {
         const val CLIP_EMBEDDING_LENGTH = 512
-        const val TAG = "EmbeddingStore"
+        const val TAG = "FileEmbeddingStore"
     }
 
     override suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO){

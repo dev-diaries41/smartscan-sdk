@@ -7,16 +7,15 @@ import android.util.Log
 import com.fpf.smartscansdk.utils.getBitmapFromUri
 import com.fpf.smartscansdk.clip.Embedding
 import com.fpf.smartscansdk.clip.Embedder
-import com.fpf.smartscansdk.clip.EmbeddingStore
+import com.fpf.smartscansdk.clip.FileEmbeddingStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import java.io.File
 
 class ImageIndexer(
     private val context: Context,
     private val embedder: Embedder,
-    private val store: EmbeddingStore
+    private val store: FileEmbeddingStore
 ): IProcessor<Long, Embedding> {
 
     companion object {
