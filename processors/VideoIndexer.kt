@@ -28,8 +28,6 @@ class VideoIndexer(
         const val INDEX_FILENAME = "video_index.bin"
     }
 
-    val file = File(context.filesDir, INDEX_FILENAME)
-
     override suspend fun onComplete(context: Context, metrics: Metrics) {
         TODO("Not yet implemented")
 //        purge(idsToPurge, file)
@@ -91,7 +89,7 @@ class VideoIndexer(
         }
     }
 
-    private suspend fun purge(idsToPurge: List<Long>, file: File) = withContext(Dispatchers.IO) {
+    private suspend fun purge(idsToPurge: List<Long>) = withContext(Dispatchers.IO) {
         if (idsToPurge.isEmpty()) return@withContext
 
         try {
