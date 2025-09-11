@@ -1,8 +1,8 @@
 package com.fpf.smartscansdk.extensions.embeddings
 
 import android.util.Log
-import com.fpf.smartscansdk.core.embeddings.Embedding
-import com.fpf.smartscansdk.core.embeddings.IEmbeddingStore
+import com.fpf.smartscansdk.core.ml.embeddings.Embedding
+import com.fpf.smartscansdk.core.ml.embeddings.IEmbeddingStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
