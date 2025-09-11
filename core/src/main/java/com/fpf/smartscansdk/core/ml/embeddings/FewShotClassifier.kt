@@ -1,4 +1,4 @@
-package com.fpf.smartscansdk.core.ml.model.embeddings
+package com.fpf.smartscansdk.core.ml.models.embeddings
 
 import android.content.Context
 import androidx.core.net.toUri

@@ -1,20 +1,24 @@
-package com.fpf.smartscansdk.core.ml.model.embeddings.clip
+package com.fpf.smartscansdk.core.ml.embeddings.clip
 
 import ai.onnxruntime.OnnxTensor
+import ai.onnxruntime.OrtEnvironment
+import ai.onnxruntime.OrtSession
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.util.JsonReader
 import com.fpf.smartscansdk.core.R
-import com.fpf.smartscansdk.core.ml.model.IModel
-import com.fpf.smartscansdk.core.ml.model.OnnxModel
-import com.fpf.smartscansdk.core.ml.model.embeddings.ImageEmbeddingProvider
-import com.fpf.smartscansdk.core.ml.model.embeddings.TextEmbeddingProvider
-import com.fpf.smartscansdk.core.ml.model.embeddings.clip.ClipConfig.DIM_BATCH_SIZE
-import com.fpf.smartscansdk.core.ml.model.embeddings.clip.ClipConfig.DIM_PIXEL_SIZE
-import com.fpf.smartscansdk.core.ml.model.embeddings.clip.ClipConfig.IMAGE_SIZE_X
-import com.fpf.smartscansdk.core.ml.model.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
-import com.fpf.smartscansdk.core.ml.model.embeddings.normalizeL2
+import com.fpf.smartscansdk.core.ml.models.IModel
+import com.fpf.smartscansdk.core.ml.models.OnnxModel
+import com.fpf.smartscansdk.core.ml.models.embeddings.ImageEmbeddingProvider
+import com.fpf.smartscansdk.core.ml.models.embeddings.TextEmbeddingProvider
+import com.fpf.smartscansdk.core.ml.models.embeddings.clip.ClipConfig.DIM_BATCH_SIZE
+import com.fpf.smartscansdk.core.ml.models.embeddings.clip.ClipConfig.DIM_PIXEL_SIZE
+import com.fpf.smartscansdk.core.ml.models.embeddings.clip.ClipConfig.IMAGE_SIZE_X
+import com.fpf.smartscansdk.core.ml.models.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
+import com.fpf.smartscansdk.core.ml.models.embeddings.clip.ClipTokenizer
+import com.fpf.smartscansdk.core.ml.models.embeddings.clip.preProcess
+import com.fpf.smartscansdk.core.ml.models.embeddings.normalizeL2
 import com.fpf.smartscansdk.core.utils.MemoryUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
@@ -52,8 +56,8 @@ class ClipEmbedder(
 
             OnnxTensor.createTensor(modelEnv(), imgData, inputShape).use { inputTensor ->
                 val inputName = requireNotNull(modelInputName(model))
-                val output = model.run<Array<FloatArray>>(mapOf(inputName to inputTensor))
-                normalizeL2((output.values.first())[0])
+                val output = model.run(mapOf(inputName to inputTensor))
+                normalizeL2((output.values.first() as Array<FloatArray>)[0])
             }
         }
 
@@ -72,8 +76,8 @@ class ClipEmbedder(
 
             OnnxTensor.createTensor(modelEnv(), inputIds, inputShape).use { inputTensor ->
                 val inputName = requireNotNull(modelInputName(model))
-                val output = model.run<Array<FloatArray>>(mapOf(inputName to inputTensor))
-                normalizeL2((output.values.first())[0])
+                val output = model.run(mapOf(inputName to inputTensor))
+                normalizeL2((output.values.first() as Array<FloatArray>)[0])
             }
         }
 
@@ -133,11 +137,11 @@ class ClipEmbedder(
             }
         }
 
-    private fun modelEnv() = ai.onnxruntime.OrtEnvironment.getEnvironment()
+    private fun modelEnv() = OrtEnvironment.getEnvironment()
     private fun modelInputName(model: IModel): String? {
         val impl = model as? OnnxModel ?: return null
         val s = impl.javaClass.getDeclaredField("session").apply { isAccessible = true }
-            .get(impl) as? ai.onnxruntime.OrtSession
+            .get(impl) as? OrtSession
         return s?.inputNames?.firstOrNull()
     }
 }

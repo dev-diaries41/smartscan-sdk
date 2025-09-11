@@ -1,4 +1,4 @@
-package com.fpf.smartscansdk.core.ml.model
+package com.fpf.smartscansdk.core.ml.models
 
 import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
