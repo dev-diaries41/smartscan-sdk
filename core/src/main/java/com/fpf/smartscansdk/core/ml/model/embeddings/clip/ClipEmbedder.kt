@@ -1,14 +1,13 @@
 package com.fpf.smartscansdk.core.ml.model.embeddings.clip
 
 import ai.onnxruntime.OnnxTensor
-import ai.onnxruntime.OrtEnvironment
-import ai.onnxruntime.OrtSession
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.util.JsonReader
-import android.util.Log
 import com.fpf.smartscansdk.core.R
+import com.fpf.smartscansdk.core.ml.model.IModel
+import com.fpf.smartscansdk.core.ml.model.OnnxModel
 import com.fpf.smartscansdk.core.ml.model.embeddings.ImageEmbeddingProvider
 import com.fpf.smartscansdk.core.ml.model.embeddings.TextEmbeddingProvider
 import com.fpf.smartscansdk.core.ml.model.embeddings.clip.ClipConfig.DIM_BATCH_SIZE
@@ -16,185 +15,129 @@ import com.fpf.smartscansdk.core.ml.model.embeddings.clip.ClipConfig.DIM_PIXEL_S
 import com.fpf.smartscansdk.core.ml.model.embeddings.clip.ClipConfig.IMAGE_SIZE_X
 import com.fpf.smartscansdk.core.ml.model.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.core.ml.model.embeddings.normalizeL2
-
 import com.fpf.smartscansdk.core.utils.MemoryUtils
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.coroutines.withContext
 import java.io.BufferedReader
-import java.io.File
 import java.io.InputStreamReader
 import java.nio.LongBuffer
 import java.util.*
-import kotlin.system.measureTimeMillis
-import kotlin.use
 
+/** CLIP embedder using [IModel] abstraction. */
 class ClipEmbedder(
     resources: Resources,
     imageModelPath: String? = null,
     textModelPath: String? = null
 ) : ImageEmbeddingProvider, TextEmbeddingProvider {
-    private var ortEnv: OrtEnvironment = OrtEnvironment.getEnvironment()
-    private var imageSession: OrtSession? = null
-    private var textSession: OrtSession? = null
+    private val imageModel: IModel? = imageModelPath?.let { OnnxModel().apply { loadModel(it) } }
+    private val textModel: IModel? = textModelPath?.let { OnnxModel().apply { loadModel(it) } }
 
     private val tokenizerVocab: Map<String, Int> = getVocab(resources)
     private val tokenizerMerges: HashMap<Pair<String, String>, Int> = getMerges(resources)
-    private val tokenBOS: Int = 49406
-    private val tokenEOS: Int = 49407
     private val tokenizer = ClipTokenizer(tokenizerVocab, tokenizerMerges)
+    private val tokenBOS = 49406
+    private val tokenEOS = 49407
+
     override val embeddingDim: Int = 512
     private var closed = false
 
-    init {
-        if (imageModelPath != null) {
-            imageSession = loadModel(imageModelPath)
-        }
-        if (textModelPath  != null) {
-            textSession = loadModel(textModelPath)
-        }
-    }
+    override suspend fun generateImageEmbedding(bitmap: Bitmap): FloatArray =
+        withContext(Dispatchers.Default) {
+            val model = imageModel ?: throw IllegalStateException("Image model not loaded")
+            val inputShape = longArrayOf(DIM_BATCH_SIZE.toLong(), DIM_PIXEL_SIZE.toLong(),
+                IMAGE_SIZE_X.toLong(), IMAGE_SIZE_Y.toLong()
+            )
+            val imgData = preProcess(bitmap)
 
-    private fun loadModel(modelPath: String): OrtSession {
-        lateinit var session: OrtSession
-        val timeTaken = measureTimeMillis {
-            val modelBytes = File(modelPath).readBytes()
-            session = ortEnv.createSession(modelBytes)
-        }
-        Log.i("ClipEmbedder", "$modelPath model loaded in ${timeTaken}ms")
-        return session
-    }
-
-    override suspend fun generateImageEmbedding(bitmap: Bitmap): FloatArray = withContext(Dispatchers.Default) {
-        val session = imageSession ?: throw IllegalStateException("Image model not loaded")
-        val inputShape = longArrayOf(DIM_BATCH_SIZE.toLong(), DIM_PIXEL_SIZE.toLong(),
-            IMAGE_SIZE_X.toLong(), IMAGE_SIZE_Y.toLong()
-        )
-        val inputName = session.inputNames.iterator().next()
-        val imgData = preProcess(bitmap)
-
-        OnnxTensor.createTensor(ortEnv, imgData, inputShape).use { inputTensor ->
-            session.run(Collections.singletonMap(inputName, inputTensor)).use { output ->
-                @Suppress("UNCHECKED_CAST")
-                val rawOutput = (output[0].value as Array<FloatArray>)[0]
-                normalizeL2(rawOutput)
+            OnnxTensor.createTensor(modelEnv(), imgData, inputShape).use { inputTensor ->
+                val inputName = requireNotNull(modelInputName(model))
+                val output = model.run(mapOf(inputName to inputTensor))
+                normalizeL2((output.values.first() as Array<FloatArray>)[0])
             }
         }
-    }
 
-    override suspend fun generateTextEmbedding(text: String): FloatArray = withContext(Dispatchers.Default) {
-        val session = textSession ?: throw IllegalStateException("Text model not loaded")
-        val textClean = Regex("[^A-Za-z0-9 ]").replace(text, "").lowercase()
-        var tokens = mutableListOf(tokenBOS) + tokenizer.encode(textClean) + tokenEOS
-        tokens = tokens.take(77) + List(77 - tokens.size) { 0 }
+    override suspend fun generateTextEmbedding(text: String): FloatArray =
+        withContext(Dispatchers.Default) {
+            val model = textModel ?: throw IllegalStateException("Text model not loaded")
+            val clean = Regex("[^A-Za-z0-9 ]").replace(text, "").lowercase()
+            var tokens = mutableListOf(tokenBOS) + tokenizer.encode(clean) + tokenEOS
+            tokens = tokens.take(77) + List(77 - tokens.size) { 0 }
 
-        val inputShape = longArrayOf(1, 77)
-        val inputIds = LongBuffer.allocate(1 * 77).apply {
-            tokens.forEach { put(it.toLong()) }
-            rewind()
-        }
+            val inputIds = LongBuffer.allocate(1 * 77).apply {
+                tokens.forEach { put(it.toLong()) }
+                rewind()
+            }
+            val inputShape = longArrayOf(1, 77)
 
-        val inputName = session.inputNames?.iterator()?.next()
-
-        OnnxTensor.createTensor(ortEnv, inputIds, inputShape).use { inputTensor ->
-            session.run(Collections.singletonMap(inputName, inputTensor)).use { output ->
-                @Suppress("UNCHECKED_CAST")
-                val rawOutput = (output[0].value as Array<FloatArray>)[0]
-                normalizeL2(rawOutput)
+            OnnxTensor.createTensor(modelEnv(), inputIds, inputShape).use { inputTensor ->
+                val inputName = requireNotNull(modelInputName(model))
+                val output = model.run(mapOf(inputName to inputTensor))
+                normalizeL2((output.values.first() as Array<FloatArray>)[0])
             }
         }
-    }
 
-    override suspend fun generatePrototypeEmbedding(context: Context, bitmaps: List<Bitmap>): FloatArray = withContext(Dispatchers.Default) {
-        if (bitmaps.isEmpty()) {
-            throw IllegalArgumentException("Bitmap list is empty")
-        }
+    override suspend fun generatePrototypeEmbedding(context: Context, bitmaps: List<Bitmap>): FloatArray =
+        withContext(Dispatchers.Default) {
+            if (bitmaps.isEmpty()) throw IllegalArgumentException("Bitmap list is empty")
 
-        val allEmbeddings = mutableListOf<FloatArray>()
-        val memoryUtils = MemoryUtils(context)
+            val memoryUtils = MemoryUtils(context)
+            val allEmbeddings = mutableListOf<FloatArray>()
 
-        for (chunk in bitmaps.chunked(10)) {
-            val currentConcurrency = memoryUtils.calculateConcurrencyLevel()
-//            Log.i("generatePrototypeEmbedding", "generatePrototypeEmbedding() - Concurrency: $currentConcurrency | Free Memory: ${
-//                memoryUtils.getFreeMemory() / (1024 * 1024)
-//            } MB"
-//            )
-
-            val semaphore = Semaphore(currentConcurrency)
-
-            val deferredEmbeddings: List<Deferred<FloatArray?>> = chunk.map { bitmap ->
-                async {
-                    semaphore.withPermit {
-                        try {
-                            generateImageEmbedding(bitmap)
-                        } catch (e: Exception) {
-                            Log.e("generatePrototypeEmbedding", "Failed to process bitmap", e)
-                            null
+            for (chunk in bitmaps.chunked(10)) {
+                val semaphore = Semaphore(memoryUtils.calculateConcurrencyLevel())
+                val deferred = chunk.map { bmp ->
+                    async {
+                        semaphore.withPermit {
+                            try { generateImageEmbedding(bmp) } catch (_: Exception) { null }
                         }
                     }
                 }
+                allEmbeddings.addAll(deferred.awaitAll().filterNotNull())
             }
 
-            val embeddings = deferredEmbeddings.awaitAll().filterNotNull()
-            allEmbeddings.addAll(embeddings)
-        }
+            if (allEmbeddings.isEmpty()) throw IllegalStateException("No embeddings generated")
+            val embeddingLength = allEmbeddings[0].size
+            val sum = FloatArray(embeddingLength)
+            for (emb in allEmbeddings) for (i in emb.indices) sum[i] += emb[i]
 
-        if (allEmbeddings.isEmpty()) {
-            throw IllegalStateException("No embeddings could be generated from the provided bitmaps")
+            normalizeL2(FloatArray(embeddingLength) { i -> sum[i] / allEmbeddings.size })
         }
-
-        val embeddingLength = allEmbeddings[0].size
-        val sumEmbedding = FloatArray(embeddingLength) { 0f }
-        for (emb in allEmbeddings) {
-            for (i in 0 until embeddingLength) {
-                sumEmbedding[i] += emb[i]
-            }
-        }
-
-        val avgEmbedding = FloatArray(embeddingLength) { i -> sumEmbedding[i] / allEmbeddings.size }
-        normalizeL2(avgEmbedding)
-    }
 
     override fun closeSession() {
-        if (closed) return  // fix double close bug
+        if (closed) return
         closed = true
-        imageSession?.close()
-        textSession?.close()
-        imageSession = null
-        textSession = null
+        (imageModel as? AutoCloseable)?.close()
+        (textModel as? AutoCloseable)?.close()
     }
 
-    private fun getVocab(resources: Resources): Map<String, Int> {
-        return hashMapOf<String, Int>().apply {
+    private fun getVocab(resources: Resources): Map<String, Int> =
+        hashMapOf<String, Int>().apply {
             resources.openRawResource(R.raw.vocab).use {
-                val vocabReader = JsonReader(InputStreamReader(it, "UTF-8"))
-                vocabReader.beginObject()
-                while (vocabReader.hasNext()) {
-                    val key = vocabReader.nextName().replace("</w>", " ")
-                    val value = vocabReader.nextInt()
-                    put(key, value)
-                }
-                vocabReader.close()
+                val reader = JsonReader(InputStreamReader(it, "UTF-8"))
+                reader.beginObject()
+                while (reader.hasNext()) put(reader.nextName().replace("</w>", " "), reader.nextInt())
+                reader.close()
             }
         }
-    }
 
-    private fun getMerges(resources: Resources): HashMap<Pair<String, String>, Int> {
-        return hashMapOf<Pair<String, String>, Int>().apply {
-            resources.openRawResource(R.raw.merges).use {
-                val mergesReader = BufferedReader(InputStreamReader(it))
-                mergesReader.useLines { seq ->
+    private fun getMerges(resources: Resources): HashMap<Pair<String, String>, Int> =
+        hashMapOf<Pair<String, String>, Int>().apply {
+            resources.openRawResource(R.raw.merges).use { stream ->
+                BufferedReader(InputStreamReader(stream)).useLines { seq ->
                     seq.drop(1).forEachIndexed { i, s ->
-                        val list = s.split(" ")
-                        val keyTuple = list[0] to list[1].replace("</w>", " ")
-                        put(keyTuple, i)
+                        val parts = s.split(" ")
+                        put(parts[0] to parts[1].replace("</w>", " "), i)
                     }
                 }
             }
         }
+
+    private fun modelEnv() = ai.onnxruntime.OrtEnvironment.getEnvironment()
+    private fun modelInputName(model: IModel): String? {
+        val impl = model as? OnnxModel ?: return null
+        val s = impl.javaClass.getDeclaredField("session").apply { isAccessible = true }
+            .get(impl) as? ai.onnxruntime.OrtSession
+        return s?.inputNames?.firstOrNull()
     }
 }
