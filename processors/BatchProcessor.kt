@@ -1,14 +1,13 @@
 package com.fpf.smartscansdk.processors
 
 import android.app.Application
-import android.content.Context
 import android.util.Log
-import com.fpf.smartscansdk.utils.MemoryOptions
 import com.fpf.smartscansdk.utils.MemoryUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -20,82 +19,79 @@ class BatchProcessor<TInput, TOutput>(
     private val options: ProcessOptions = ProcessOptions(),
 ) {
     companion object {
-        const val TAG = "Processor"
+        const val TAG = "BatchProcessor"
     }
 
-    suspend fun run(items: List<TInput>): Int = withContext(Dispatchers.IO) {
+    private val _progress: MutableStateFlow<Float> = MutableStateFlow(0f)
+    val progress: StateFlow<Float> = _progress
+
+    private val _status = MutableStateFlow<ProcessorStatus>(ProcessorStatus.IDLE)
+    val status: StateFlow<ProcessorStatus> = _status
+
+    suspend fun run(items: List<TInput>): Metrics = withContext(Dispatchers.IO) {
         val processedCount = AtomicInteger(0)
         val startTime = System.currentTimeMillis()
+        _status.value = ProcessorStatus.ACTIVE
 
         try {
             if (items.isEmpty()) {
                 Log.w(TAG, "No items to process.")
-                return@withContext 0
+                _status.value = ProcessorStatus.COMPLETE
+                return@withContext Metrics.Success()
             }
-
-            var totalProcessed = 0
 
             val memoryUtils = MemoryUtils(application.applicationContext, options.memory)
 
             for (batch in items.chunked(options.batchSize)) {
                 val currentConcurrency = memoryUtils.calculateConcurrencyLevel()
-                // Log.i(TAG, "Current allowed concurrency: $currentConcurrency | Free Memory: ${memoryUtils.getFreeMemory() / (1024 * 1024)} MB")
-
                 val semaphore = Semaphore(currentConcurrency)
-                val outputBatch = ArrayList<TOutput>(options.batchSize)
+
                 val deferredResults = batch.map { item ->
                     async {
                         semaphore.withPermit {
                             try {
                                 val output = processor?.onProcess(application, item)
-                                if(output != null){
-                                    outputBatch.add(output)
-                                }
-
                                 val current = processedCount.incrementAndGet()
-                                processor?.onProgress(current, items.size)
-                                return@async 1
+                                _progress.value = (current * 100f) / items.size
+                                processor?.onProgress?.invoke(current, items.size)
+                                output
                             } catch (e: Exception) {
-                                processor?.onProcessError(application, e, item)
+                                processor?.onProcessError?.invoke(application, e, item)
+                                null
                             }
-                            return@async 0
                         }
                     }
                 }
 
-                totalProcessed += deferredResults.awaitAll().sum()
-                processor?.onBatchComplete(application, outputBatch)
+                val outputBatch = deferredResults.mapNotNull { it.await() }
+                processor?.onBatchComplete?.invoke(application, outputBatch)
             }
+
             val endTime = System.currentTimeMillis()
-            val completionTime = endTime - startTime
-            processor?.onComplete(application, totalProcessed, completionTime)
-            totalProcessed
+            val metrics = Metrics.Success(processedCount.get(), timeElapsed = endTime - startTime)
+
+            processor?.onComplete?.invoke(application, metrics)
+            _status.value = ProcessorStatus.COMPLETE
+            metrics
         }
         catch (e: CancellationException) {
             throw e
         }
         catch (e: Exception) {
-            processor?.onError(application, e)
-            0
+            val metrics = Metrics.Failure(
+                processedBeforeFailure = processedCount.get(),
+                timeElapsed = System.currentTimeMillis() - startTime,
+                error = e
+            )
+            processor?.onError?.invoke(application, e)
+            _status.value = ProcessorStatus.FAILED
+            metrics
         }
+
     }
 }
 
-data class ProcessOptions(
-    val memory: MemoryOptions = MemoryOptions(),
-    val batchSize: Int = 10
-)
 
-interface IProcessor<T, R> {
-    suspend fun onProgress(processedCount: Int, total: Int)
-    suspend fun onComplete(context: Context, totalProcessed: Int, processingTime: Long)
-    suspend fun onBatchComplete(context: Context, batch: List<R>)
-    suspend fun onProcess(context: Context, item: T): R
-    fun onProcessError(context: Context, error: Exception, item: T){
-//         replace item.toString with id once i update T to have id
-        Log.e(BatchProcessor.TAG, "Error processing item: ${error.message + "\n" + item.toString()}", error)
-    }
-    suspend fun onError(context: Context, error: Exception){
-        Log.e(BatchProcessor.TAG, "Error processing items: ${error.message}", error)
-    }
-}
+
+
+
