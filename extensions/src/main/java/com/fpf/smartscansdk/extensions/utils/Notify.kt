@@ -9,6 +9,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 
+// Required for callbacks
 @SuppressLint("MissingPermission")
 fun showNotification(context: Context,
                      title: String,
