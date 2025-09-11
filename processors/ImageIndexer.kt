@@ -20,8 +20,7 @@ class ImageIndexer(
         const val INDEX_FILENAME = "image_index.bin"
     }
 
-    override suspend fun onComplete(context: Context, metrics: Metrics) {
-        TODO("Not yet implemented")
+    override suspend fun onComplete(context: Context, metrics: Metrics.Success) {
 //        store.remove(idsToPurge)
     }
 

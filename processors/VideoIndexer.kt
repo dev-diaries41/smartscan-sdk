@@ -23,7 +23,7 @@ class VideoIndexer(
         const val INDEX_FILENAME = "video_index.bin"
     }
 
-    override suspend fun onComplete(context: Context, metrics: Metrics) {
+    override suspend fun onComplete(context: Context, metrics: Metrics.Success) {
         TODO("Not yet implemented")
 //        store.remove(idsToPurge)
     }
