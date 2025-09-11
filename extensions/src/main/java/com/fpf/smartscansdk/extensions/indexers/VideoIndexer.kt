@@ -7,13 +7,14 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
-import com.fpf.smartscansdk.core.embeddings.clip.ClipEmbedder
-import com.fpf.smartscansdk.core.embeddings.Embedding
+import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipEmbedder
+import com.fpf.smartscansdk.core.ml.embeddings.Embedding
+import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
+import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
 import com.fpf.smartscansdk.core.processors.IProcessor
 import com.fpf.smartscansdk.core.processors.Metrics
-import com.fpf.smartscansdk.utils.IMAGE_SIZE_X
-import com.fpf.smartscansdk.utils.IMAGE_SIZE_Y
+
 
 class VideoIndexer(
     private val embedder: ClipEmbedder,

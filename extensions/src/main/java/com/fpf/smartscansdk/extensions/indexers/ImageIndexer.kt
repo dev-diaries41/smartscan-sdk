@@ -3,9 +3,10 @@ package com.fpf.smartscansdk.extensions.indexers
 import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
-import com.fpf.smartscansdk.utils.getBitmapFromUri
-import com.fpf.smartscansdk.core.embeddings.Embedding
-import com.fpf.smartscansdk.core.embeddings.clip.ClipEmbedder
+import com.fpf.smartscansdk.core.utils.getBitmapFromUri
+import com.fpf.smartscansdk.core.ml.embeddings.Embedding
+import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig
+import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipEmbedder
 import com.fpf.smartscansdk.core.processors.IProcessor
 import com.fpf.smartscansdk.core.processors.Metrics
 import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
@@ -34,7 +35,7 @@ class ImageIndexer(
         val contentUri = ContentUris.withAppendedId(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id
         )
-        val bitmap = getBitmapFromUri(context, contentUri)
+        val bitmap = getBitmapFromUri(context, contentUri, ClipConfig.IMAGE_SIZE_X)
         val embedding = withContext(NonCancellable) {
             embedder.generateImageEmbedding(bitmap)
         }
