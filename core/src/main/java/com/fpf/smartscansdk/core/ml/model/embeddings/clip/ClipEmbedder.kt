@@ -52,8 +52,8 @@ class ClipEmbedder(
 
             OnnxTensor.createTensor(modelEnv(), imgData, inputShape).use { inputTensor ->
                 val inputName = requireNotNull(modelInputName(model))
-                val output = model.run(mapOf(inputName to inputTensor))
-                normalizeL2((output.values.first() as Array<FloatArray>)[0])
+                val output = model.run<Array<FloatArray>>(mapOf(inputName to inputTensor))
+                normalizeL2((output.values.first())[0])
             }
         }
 
@@ -72,8 +72,8 @@ class ClipEmbedder(
 
             OnnxTensor.createTensor(modelEnv(), inputIds, inputShape).use { inputTensor ->
                 val inputName = requireNotNull(modelInputName(model))
-                val output = model.run(mapOf(inputName to inputTensor))
-                normalizeL2((output.values.first() as Array<FloatArray>)[0])
+                val output = model.run<Array<FloatArray>>(mapOf(inputName to inputTensor))
+                normalizeL2((output.values.first())[0])
             }
         }
 
