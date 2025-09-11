@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("maven-publish")
 }
 
 android {
@@ -44,4 +45,19 @@ dependencies {
 
     // Optional core-ktx if your library uses Android utilities
     api(libs.androidx.core.ktx)
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.github.dev-diaries41"
+            artifactId = project.name
+            // Use a default version for local testing
+            version = project.findProperty("publishVersion")?.toString() ?: "1.0.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
+    }
 }
