@@ -1,5 +1,6 @@
 package com.fpf.smartscansdk.clip
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -15,6 +16,7 @@ class EmbeddingStore(private val file: File, private val embeddingLength: Int){
 
     companion object {
         const val CLIP_EMBEDDING_LENGTH = 512
+        const val TAG = "EmbeddingStore"
     }
 
     suspend fun save(embeddingsList: List<Embedding>) = withContext(Dispatchers.IO){
@@ -114,6 +116,19 @@ class EmbeddingStore(private val file: File, private val embeddingLength: Int){
                 }
             }
             channel.force(false)
+        }
+    }
+
+    suspend fun remove(ids: List<Long>) = withContext(Dispatchers.IO) {
+        if (ids.isEmpty()) return@withContext
+
+        try {
+            val embeddings = load()
+            val remaining = embeddings.filter { it.id !in ids }
+            save(remaining)
+            Log.i(TAG, "Removed ${ids.size} stale embeddings")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error Removing embeddings", e)
         }
     }
 
