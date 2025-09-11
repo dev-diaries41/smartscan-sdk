@@ -1,12 +1,8 @@
-package com.fpf.smartscansdk.processors
+package com.fpf.smartscansdk.core.processors
 
 import android.app.Application
 import android.util.Log
-import com.fpf.smartscansdk.core.processors.IProcessor
-import com.fpf.smartscansdk.core.processors.Metrics
-import com.fpf.smartscansdk.core.processors.ProcessOptions
-import com.fpf.smartscansdk.core.processors.ProcessorStatus
-import com.fpf.smartscansdk.utils.MemoryUtils
+import com.fpf.smartscansdk.core.utils.MemoryUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async

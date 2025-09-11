@@ -1,7 +1,7 @@
 package com.fpf.smartscansdk.core.processors
 
 import android.content.Context
-import com.fpf.smartscansdk.utils.MemoryOptions
+import com.fpf.smartscansdk.core.utils.MemoryOptions
 
 enum class ProcessorStatus {IDLE, ACTIVE, COMPLETE, FAILED }
 
