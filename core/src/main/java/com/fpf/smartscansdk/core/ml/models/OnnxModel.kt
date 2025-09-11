@@ -23,6 +23,10 @@ class OnnxModel : IModel {
         }
     }
 
+    fun getInputNames(): List<String>? = session?.inputNames?.toList()
+
+    fun getEnv(): OrtEnvironment = env
+
     override fun close() {
         session?.close()
         session = null
