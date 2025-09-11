@@ -19,12 +19,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     lint {
@@ -32,8 +32,18 @@ android {
     }
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+        vendor = JvmVendorSpec.ADOPTIUM
+    }
+}
+
 dependencies {
-    implementation(project(":core"))
+    // Pull in core transitively so consumers only need extensions
+    api(project(":core"))
+
+    // Add any extension-specific dependencies here
 }
 
 publishing {
@@ -41,7 +51,6 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.github.dev-diaries41"
             artifactId = project.name
-            // Use a default version for local testing
             version = project.findProperty("publishVersion")?.toString() ?: "1.0.0"
 
             afterEvaluate {

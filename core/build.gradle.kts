@@ -19,20 +19,27 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 
     buildFeatures {
+        // Add any enabled features here if needed
     }
 
-    // Optional: set targetSdk for lint or tests only
     lint {
         targetSdk = 34
+    }
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+        vendor = JvmVendorSpec.ADOPTIUM
     }
 }
 
@@ -43,7 +50,7 @@ dependencies {
     // Doc file handling
     implementation(libs.androidx.documentfile)
 
-    // Optional core-ktx if your library uses Android utilities
+    // Expose core-ktx to consumers of core or extensions
     api(libs.androidx.core.ktx)
 }
 
@@ -52,7 +59,6 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "com.github.dev-diaries41"
             artifactId = project.name
-            // Use a default version for local testing
             version = project.findProperty("publishVersion")?.toString() ?: "1.0.0"
 
             afterEvaluate {
