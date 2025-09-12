@@ -6,7 +6,7 @@ import android.provider.MediaStore
 import com.fpf.smartscansdk.core.utils.getBitmapFromUri
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig
-import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipEmbedder
+import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipImageEmbedder
 import com.fpf.smartscansdk.core.processors.IProcessor
 import com.fpf.smartscansdk.core.processors.Metrics
 import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
 // These benchmarks strongly favour the  FileEmbeddingStore for optimal on-device search functionality and UX.
 
 class ImageIndexer(
-    private val embedder: ClipEmbedder,
+    private val embedder: ClipImageEmbedder,
     private val store: FileEmbeddingStore
 ): IProcessor<Long, Embedding> {
 
