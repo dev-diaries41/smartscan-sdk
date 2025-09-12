@@ -31,12 +31,14 @@ interface IRetriever {
 }
 
 
-interface EmbeddingProvider {
+interface IEmbeddingProvider<T> {
     val embeddingDim: Int? get() = null
-
     fun closeSession() = Unit
-
-    suspend fun embed(data: Bitmap): FloatArray
-    suspend fun embed(data: String): FloatArray
+    suspend fun embed(data: T): FloatArray
 }
+
+
+typealias TextEmbeddingProvider = IEmbeddingProvider<String>
+typealias ImageEmbeddingProvider = IEmbeddingProvider<Bitmap>
+
 
