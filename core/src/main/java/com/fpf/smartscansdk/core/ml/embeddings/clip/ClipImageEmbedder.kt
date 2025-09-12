@@ -30,7 +30,7 @@ class ClipImageEmbedder(
     resources: Resources,
     modelSource: ModelSource,
 ) : ImageEmbeddingProvider {
-    private val imageModel: OnnxModel? = when(modelSource){
+    private val imageModel: OnnxModel = when(modelSource){
         is FilePath -> OnnxModel(FileOnnxLoader(modelSource.path))
         is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, modelSource.resId))
     }
@@ -38,10 +38,7 @@ class ClipImageEmbedder(
     override val embeddingDim: Int = 512
     private var closed = false
 
-    suspend fun initialize() = coroutineScope {
-        imageModel?.let { withContext(Dispatchers.IO) { it.loadModel() } }
-    }
-
+    suspend fun initialize() = imageModel.loadModel()
 
     override suspend fun embed(bitmap: Bitmap): FloatArray = withContext(Dispatchers.Default) {
         val model = imageModel ?: throw IllegalStateException("Image model not loaded")

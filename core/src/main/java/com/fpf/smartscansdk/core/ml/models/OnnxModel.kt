@@ -3,14 +3,19 @@ package com.fpf.smartscansdk.core.ml.models
 import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 
 class OnnxModel(override val loader: IModelLoader<ByteArray>) : IModel<OnnxTensorLike> {
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var session: OrtSession? = null
 
-    override suspend fun loadModel() {
-        val bytes = loader.load()
-        session = env.createSession(bytes)
+    override suspend fun loadModel()  = coroutineScope {
+        withContext(Dispatchers.IO) {
+            val bytes = loader.load()
+            session = env.createSession(bytes)
+        }
     }
 
     override fun isLoaded(): Boolean = session != null

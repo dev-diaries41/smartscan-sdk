@@ -32,7 +32,7 @@ class ClipTextEmbedder(
     modelSource: ModelSource
 ) : TextEmbeddingProvider {
 
-    private val textModel: OnnxModel? = when(modelSource){
+    private val textModel: OnnxModel = when(modelSource){
         is FilePath -> OnnxModel(FileOnnxLoader(modelSource.path))
         is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, modelSource.resId))
     }
@@ -46,10 +46,7 @@ class ClipTextEmbedder(
     override val embeddingDim: Int = 512
     private var closed = false
 
-    suspend fun initialize() = coroutineScope {
-        textModel?.let { withContext(Dispatchers.IO) { it.loadModel() } }
-    }
-
+    suspend fun initialize() = textModel.loadModel()
 
     override suspend fun embed(text: String): FloatArray = withContext(Dispatchers.Default) {
         val model = textModel ?: throw IllegalStateException("Text model not loaded")
