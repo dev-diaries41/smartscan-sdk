@@ -15,7 +15,7 @@ import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.core.ml.embeddings.normalizeL2
 import com.fpf.smartscansdk.core.ml.models.FileOnnxLoader
 import com.fpf.smartscansdk.core.ml.models.FilePath
-import com.fpf.smartscansdk.core.ml.models.ModelPathLike
+import com.fpf.smartscansdk.core.ml.models.ModelSource
 import com.fpf.smartscansdk.core.ml.models.ResourceId
 import com.fpf.smartscansdk.core.ml.models.ResourceOnnxLoader
 import com.fpf.smartscansdk.core.processors.BatchProcessor
@@ -25,24 +25,23 @@ import kotlinx.coroutines.*
 
 /** CLIP embedder using [IModel] abstraction. */
 
-// Using ModelPathLike enables using with bundle model or local model which has been downloaded
+// Using ModelSource enables using with bundle model or local model which has been downloaded
 class ClipImageEmbedder(
     resources: Resources,
-    imageModelPath: ModelPathLike,
+    modelSource: ModelSource,
 ) : ImageEmbeddingProvider {
-    private val imageModel: OnnxModel? = when(imageModelPath){
-        is FilePath -> OnnxModel(FileOnnxLoader(imageModelPath.path))
-        is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, imageModelPath.resId))
+    private val imageModel: OnnxModel? = when(modelSource){
+        is FilePath -> OnnxModel(FileOnnxLoader(modelSource.path))
+        is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, modelSource.resId))
     }
 
     override val embeddingDim: Int = 512
     private var closed = false
 
     suspend fun initialize() = coroutineScope {
-        val jobs = mutableListOf<Job>()
-        imageModel?.let { jobs += launch { withContext(Dispatchers.IO) { it.loadModel() } } }
-        jobs.joinAll()
+        imageModel?.let { withContext(Dispatchers.IO) { it.loadModel() } }
     }
+
 
     override suspend fun embed(bitmap: Bitmap): FloatArray = withContext(Dispatchers.Default) {
         val model = imageModel ?: throw IllegalStateException("Image model not loaded")

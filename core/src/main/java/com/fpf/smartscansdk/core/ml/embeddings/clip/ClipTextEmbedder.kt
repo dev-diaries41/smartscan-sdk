@@ -12,7 +12,7 @@ import com.fpf.smartscansdk.core.ml.models.OnnxModel
 import com.fpf.smartscansdk.core.ml.embeddings.normalizeL2
 import com.fpf.smartscansdk.core.ml.models.FileOnnxLoader
 import com.fpf.smartscansdk.core.ml.models.FilePath
-import com.fpf.smartscansdk.core.ml.models.ModelPathLike
+import com.fpf.smartscansdk.core.ml.models.ModelSource
 import com.fpf.smartscansdk.core.ml.models.ResourceId
 import com.fpf.smartscansdk.core.ml.models.ResourceOnnxLoader
 import com.fpf.smartscansdk.core.processors.BatchProcessor
@@ -26,17 +26,15 @@ import java.util.*
 
 /** CLIP embedder using [IModel] abstraction. */
 
-// Using ModelPathLike enables using with bundle model or local model which has been downloaded
+// Using ModelSource enables using with bundle model or local model which has been downloaded
 class ClipTextEmbedder(
     resources: Resources,
-    textModelPath: ModelPathLike
+    modelSource: ModelSource
 ) : TextEmbeddingProvider {
 
-    private val textModel: OnnxModel? = textModelPath?.let {
-        when(it){
-            is FilePath -> OnnxModel(FileOnnxLoader(it.path))
-            is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, it.resId))
-        }
+    private val textModel: OnnxModel? = when(modelSource){
+        is FilePath -> OnnxModel(FileOnnxLoader(modelSource.path))
+        is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, modelSource.resId))
     }
 
     private val tokenizerVocab: Map<String, Int> = getVocab(resources)
@@ -49,9 +47,7 @@ class ClipTextEmbedder(
     private var closed = false
 
     suspend fun initialize() = coroutineScope {
-        val jobs = mutableListOf<Job>()
-        textModel?.let { jobs += launch { withContext(Dispatchers.IO) { it.loadModel() } } }
-        jobs.joinAll()
+        textModel?.let { withContext(Dispatchers.IO) { it.loadModel() } }
     }
 
 

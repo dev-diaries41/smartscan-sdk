@@ -9,9 +9,9 @@ interface IModelLoader<T> {
     suspend fun load(): T
 }
 
-sealed interface ModelPathLike
-data class FilePath(val path: String) : ModelPathLike
-data class ResourceId(@RawRes val resId: Int) : ModelPathLike
+sealed interface ModelSource
+data class FilePath(val path: String) : ModelSource
+data class ResourceId(@RawRes val resId: Int) : ModelSource
 
 
 class FileOnnxLoader(private val path: String) : IModelLoader<ByteArray> {
