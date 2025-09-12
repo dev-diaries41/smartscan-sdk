@@ -86,11 +86,34 @@ implementation("com.github.dev-diaries41:extensions:1.0.0")
 
 ---
 
+## Benchmark Summary
+### **The Room Approach**
+
+The schema for the Room version was `id (long), date (long), embedding (float array)`. In the SearchViewModel the index was loaded as LiveData. Benchmarks for loading:
+
+* 640 entries: 1237.5ms
+* 2.45k entries: 2737.2ms
+
+---
+
+### **The File Approach**
+
+The file approach saves the index as a binary file, then loads it with a memory-mapped file. This allows for much faster reads. Benchmarks for the same datasets:
+
+* 640 entries: 32ms
+* 2.45k entries: 135ms
+
+That’s roughly 40× faster at 640 entries and 20× faster at 2.45k. More importantly, the time scales linearly with the number of entries. At 50k entries the load time should still be only 2–3 seconds, which is the same time Room takes just to load 2.45k.
+
+[//]: # (**TODO: Add charts**)
+
+
 ## **Design Choices**
 
 ### Design Constraints
 * For offline on-device vector search, the full index needs to be loaded in-memory due to lack of native vectordb for android.
-* For processing a healthy balance between speed and memory/cpu usage is required to satisfy good UX and adapt to constraint CPU and Memory resources
+* Some users have 40K+ images so fast processing and loading is essential for good UX
+* A healthy balance between speed and memory/cpu usage is required to satisfy good UX and manage constrained CPU and Memory resources
 
 ## Key Aspects
 * **core**: Minimal essential functionality, primarily focused on fundamental ML logic, Interfaces and efficient pipelines processing.
