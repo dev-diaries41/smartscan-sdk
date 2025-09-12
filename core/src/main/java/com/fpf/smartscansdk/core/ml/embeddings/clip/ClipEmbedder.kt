@@ -7,10 +7,9 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.util.JsonReader
 import com.fpf.smartscansdk.core.R
+import com.fpf.smartscansdk.core.ml.embeddings.EmbeddingProvider
 import com.fpf.smartscansdk.core.ml.models.IModel
 import com.fpf.smartscansdk.core.ml.models.OnnxModel
-import com.fpf.smartscansdk.core.ml.embeddings.ImageEmbeddingProvider
-import com.fpf.smartscansdk.core.ml.embeddings.TextEmbeddingProvider
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.DIM_BATCH_SIZE
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.DIM_PIXEL_SIZE
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
@@ -29,7 +28,7 @@ class ClipEmbedder(
     resources: Resources,
     imageModelPath: String? = null,
     textModelPath: String? = null
-) : ImageEmbeddingProvider, TextEmbeddingProvider {
+) : EmbeddingProvider {
     private val imageModel: OnnxModel? = imageModelPath?.let { OnnxModel().apply { loadModel(it) } }
     private val textModel: OnnxModel? = textModelPath?.let { OnnxModel().apply { loadModel(it) } }
 
@@ -42,8 +41,7 @@ class ClipEmbedder(
     override val embeddingDim: Int = 512
     private var closed = false
 
-    override suspend fun generateImageEmbedding(bitmap: Bitmap): FloatArray =
-        withContext(Dispatchers.Default) {
+    override suspend fun embed(bitmap: Bitmap): FloatArray = withContext(Dispatchers.Default) {
             val model = imageModel ?: throw IllegalStateException("Image model not loaded")
             val inputShape = longArrayOf(DIM_BATCH_SIZE.toLong(), DIM_PIXEL_SIZE.toLong(),
                 IMAGE_SIZE_X.toLong(), IMAGE_SIZE_Y.toLong()
@@ -58,8 +56,7 @@ class ClipEmbedder(
             }
         }
 
-    override suspend fun generateTextEmbedding(text: String): FloatArray =
-        withContext(Dispatchers.Default) {
+    override suspend fun embed(text: String): FloatArray = withContext(Dispatchers.Default) {
             val model = textModel ?: throw IllegalStateException("Text model not loaded")
             val clean = Regex("[^A-Za-z0-9 ]").replace(text, "").lowercase()
             var tokens = mutableListOf(tokenBOS) + tokenizer.encode(clean) + tokenEOS
@@ -78,32 +75,44 @@ class ClipEmbedder(
                 normalizeL2((output.values.first() as Array<FloatArray>)[0])
             }
         }
-    override suspend fun generatePrototypeEmbedding(context: Context, bitmaps: List<Bitmap>): FloatArray =
-        withContext(Dispatchers.Default) {
-            if (bitmaps.isEmpty()) throw IllegalArgumentException("Bitmap list is empty")
 
-            val allEmbeddings = mutableListOf<FloatArray>()
-
-            val iProcessor = object : IProcessor<Bitmap, FloatArray?> {
-                override suspend fun onProcess(context: Context, item: Bitmap): FloatArray? {
-                    return try { generateImageEmbedding(item) } catch (_: Exception) { null }
-                }
-
-                override suspend fun onBatchComplete(context: Context, outputBatch: List<FloatArray?>) {
-                    allEmbeddings.addAll(outputBatch.filterNotNull())
+    suspend fun generateEmbeddingBatch(context: Context, texts: List<String>): List<FloatArray> {
+        val allEmbeddings = mutableListOf<FloatArray>()
+        val iProcessor = object : IProcessor<String, FloatArray?> {
+            override suspend fun onProcess(context: Context, item: String): FloatArray? {
+                return try {
+                    embed(item)
+                } catch (_: Exception) {
+                    null
                 }
             }
-
-            val processor = BatchProcessor<Bitmap, FloatArray?>(context.applicationContext as Application, iProcessor)
-            processor.run(bitmaps)
-
-            if (allEmbeddings.isEmpty()) throw IllegalStateException("No embeddings generated")
-            val embeddingLength = allEmbeddings[0].size
-            val sum = FloatArray(embeddingLength)
-            for (emb in allEmbeddings) for (i in emb.indices) sum[i] += emb[i]
-
-            normalizeL2(FloatArray(embeddingLength) { i -> sum[i] / allEmbeddings.size })
+            override suspend fun onBatchComplete(context: Context, outputBatch: List<FloatArray?>) {
+                allEmbeddings.addAll(outputBatch.filterNotNull())
+            }
         }
+        val processor = BatchProcessor<String, FloatArray?>(context.applicationContext as Application, iProcessor)
+        processor.run(texts)
+        return allEmbeddings
+    }
+
+    suspend fun generateEmbeddingBatch(context: Context, bitmaps: List<Bitmap>): List<FloatArray> {
+        val allEmbeddings = mutableListOf<FloatArray>()
+        val iProcessor = object : IProcessor<Bitmap, FloatArray?> {
+            override suspend fun onProcess(context: Context, item: Bitmap): FloatArray? {
+                return try {
+                    embed(item)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            override suspend fun onBatchComplete(context: Context, outputBatch: List<FloatArray?>) {
+                allEmbeddings.addAll(outputBatch.filterNotNull())
+            }
+        }
+        val processor = BatchProcessor<Bitmap, FloatArray?>(context.applicationContext as Application, iProcessor)
+        processor.run(bitmaps)
+        return allEmbeddings
+    }
 
 
     override fun closeSession() {

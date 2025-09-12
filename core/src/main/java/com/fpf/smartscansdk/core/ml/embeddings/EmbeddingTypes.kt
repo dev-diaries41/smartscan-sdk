@@ -35,14 +35,8 @@ interface EmbeddingProvider {
     val embeddingDim: Int? get() = null
 
     fun closeSession() = Unit
-}
 
-interface ImageEmbeddingProvider : EmbeddingProvider {
-    suspend fun generateImageEmbedding(bitmap: Bitmap): FloatArray
-    suspend fun generatePrototypeEmbedding(context: Context, bitmaps: List<Bitmap>): FloatArray
-}
-
-interface TextEmbeddingProvider : EmbeddingProvider {
-    suspend fun generateTextEmbedding(text: String): FloatArray
+    suspend fun embed(data: Bitmap): FloatArray
+    suspend fun embed(data: String): FloatArray
 }
 
