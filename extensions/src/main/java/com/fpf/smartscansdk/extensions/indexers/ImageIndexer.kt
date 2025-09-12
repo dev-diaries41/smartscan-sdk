@@ -42,7 +42,7 @@ class ImageIndexer(
         )
         val bitmap = getBitmapFromUri(context, contentUri, ClipConfig.IMAGE_SIZE_X)
         val embedding = withContext(NonCancellable) {
-            embedder.generateImageEmbedding(bitmap)
+            embedder.embed(bitmap)
         }
         return Embedding(
             id = id,
