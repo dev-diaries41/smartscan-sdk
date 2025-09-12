@@ -1,5 +1,8 @@
 package com.fpf.smartscansdk.core.ml.embeddings
 
+import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.sqrt
 
 
@@ -24,3 +27,13 @@ fun getTopN(similarities: List<Float>, n: Int, threshold: Float = 0f): List<Int>
         .sortedByDescending { similarities[it] }
         .take(n)
 }
+
+suspend fun generatePrototypeEmbedding(context: Context, rawEmbeddings: List<FloatArray>): FloatArray =
+    withContext(Dispatchers.Default) {
+        if (rawEmbeddings.isEmpty()) throw IllegalStateException("Missing embeddings")
+        val embeddingLength = rawEmbeddings[0].size
+        val sum = FloatArray(embeddingLength)
+        for (emb in rawEmbeddings) for (i in emb.indices) sum[i] += emb[i]
+
+        normalizeL2(FloatArray(embeddingLength) { i -> sum[i] / rawEmbeddings.size })
+    }
