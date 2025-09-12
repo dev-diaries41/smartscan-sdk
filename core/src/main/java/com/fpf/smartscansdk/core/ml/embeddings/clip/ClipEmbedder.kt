@@ -76,7 +76,7 @@ class ClipEmbedder(
             }
         }
 
-    suspend fun generateEmbeddingBatch(context: Context, texts: List<String>): List<FloatArray> {
+    suspend fun embedBatch(context: Context, texts: List<String>): List<FloatArray> {
         val allEmbeddings = mutableListOf<FloatArray>()
         val iProcessor = object : IProcessor<String, FloatArray?> {
             override suspend fun onProcess(context: Context, item: String): FloatArray? {
@@ -95,7 +95,7 @@ class ClipEmbedder(
         return allEmbeddings
     }
 
-    suspend fun generateEmbeddingBatch(context: Context, bitmaps: List<Bitmap>): List<FloatArray> {
+    suspend fun embedBatch(context: Context, bitmaps: List<Bitmap>): List<FloatArray> {
         val allEmbeddings = mutableListOf<FloatArray>()
         val iProcessor = object : IProcessor<Bitmap, FloatArray?> {
             override suspend fun onProcess(context: Context, item: Bitmap): FloatArray? {
