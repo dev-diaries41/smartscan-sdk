@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
 import com.fpf.smartscansdk.core.ml.embeddings.ImageEmbeddingProvider
-import com.fpf.smartscansdk.core.ml.models.IModel
 import com.fpf.smartscansdk.core.ml.models.OnnxModel
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.DIM_BATCH_SIZE
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.DIM_PIXEL_SIZE

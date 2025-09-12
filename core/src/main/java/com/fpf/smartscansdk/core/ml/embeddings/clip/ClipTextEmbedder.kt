@@ -7,7 +7,6 @@ import android.content.res.Resources
 import android.util.JsonReader
 import com.fpf.smartscansdk.core.R
 import com.fpf.smartscansdk.core.ml.embeddings.TextEmbeddingProvider
-import com.fpf.smartscansdk.core.ml.models.IModel
 import com.fpf.smartscansdk.core.ml.models.OnnxModel
 import com.fpf.smartscansdk.core.ml.embeddings.normalizeL2
 import com.fpf.smartscansdk.core.ml.models.FileOnnxLoader

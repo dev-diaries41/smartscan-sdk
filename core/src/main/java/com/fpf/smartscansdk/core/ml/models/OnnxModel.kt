@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
-class OnnxModel(override val loader: IModelLoader<ByteArray>) : IModel<OnnxTensorLike> {
+class OnnxModel(override  val loader: IModelLoader<ByteArray>) : BaseModel<OnnxTensorLike>() {
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var session: OrtSession? = null
 
