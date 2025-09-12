@@ -3,6 +3,8 @@ package com.fpf.smartscansdk.core.ml.models
 import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
+import android.content.res.Resources
+import androidx.annotation.RawRes
 import java.io.File
 
 class OnnxModel : IModel {
@@ -12,6 +14,11 @@ class OnnxModel : IModel {
     override fun loadModel(path: String) {
         val bytes = File(path).readBytes()
         session = env.createSession(bytes)
+    }
+
+    override fun loadModel(resources: Resources, resourceId: Int) {
+        val modelBytes = resources.openRawResource(resourceId).readBytes()
+        session = env.createSession(modelBytes)
     }
 
     override fun isLoaded(): Boolean = session != null
