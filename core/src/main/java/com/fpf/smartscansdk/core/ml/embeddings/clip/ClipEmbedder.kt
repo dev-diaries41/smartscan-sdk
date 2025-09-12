@@ -31,6 +31,8 @@ import java.util.*
 
 
 /** CLIP embedder using [IModel] abstraction. */
+
+// Using ModelPathLike enables using with bundle model or local model which has been downloaded
 class ClipEmbedder(
     resources: Resources,
     imageModelPath: ModelPathLike? = null,
