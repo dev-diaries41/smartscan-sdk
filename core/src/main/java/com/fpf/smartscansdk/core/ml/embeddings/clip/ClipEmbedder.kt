@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.util.JsonReader
+import androidx.annotation.RawRes
 import com.fpf.smartscansdk.core.R
 import com.fpf.smartscansdk.core.ml.embeddings.EmbeddingProvider
 import com.fpf.smartscansdk.core.ml.models.IModel
@@ -15,6 +16,11 @@ import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.DIM_PIXEL_SIZE
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.core.ml.embeddings.normalizeL2
+import com.fpf.smartscansdk.core.ml.models.FileOnnxLoader
+import com.fpf.smartscansdk.core.ml.models.FilePath
+import com.fpf.smartscansdk.core.ml.models.ModelPathLike
+import com.fpf.smartscansdk.core.ml.models.ResourceId
+import com.fpf.smartscansdk.core.ml.models.ResourceOnnxLoader
 import com.fpf.smartscansdk.core.processors.BatchProcessor
 import com.fpf.smartscansdk.core.processors.IProcessor
 import kotlinx.coroutines.*
@@ -23,14 +29,26 @@ import java.io.InputStreamReader
 import java.nio.LongBuffer
 import java.util.*
 
+
 /** CLIP embedder using [IModel] abstraction. */
 class ClipEmbedder(
     resources: Resources,
-    imageModelPath: String? = null,
-    textModelPath: String? = null
+    imageModelPath: ModelPathLike? = null,
+    textModelPath: ModelPathLike? = null
 ) : EmbeddingProvider {
-    private val imageModel: OnnxModel? = imageModelPath?.let { OnnxModel().apply { loadModel(it) } }
-    private val textModel: OnnxModel? = textModelPath?.let { OnnxModel().apply { loadModel(it) } }
+    private val imageModel: OnnxModel? = imageModelPath?.let {
+        when(it){
+            is FilePath -> OnnxModel(FileOnnxLoader(it.path))
+            is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, it.resId))
+        }
+    }
+
+    private val textModel: OnnxModel? = textModelPath?.let {
+        when(it){
+            is FilePath -> OnnxModel(FileOnnxLoader(it.path))
+            is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, it.resId))
+        }
+    }
 
     private val tokenizerVocab: Map<String, Int> = getVocab(resources)
     private val tokenizerMerges: HashMap<Pair<String, String>, Int> = getMerges(resources)
@@ -40,6 +58,13 @@ class ClipEmbedder(
 
     override val embeddingDim: Int = 512
     private var closed = false
+
+    suspend fun initialize() = coroutineScope {
+        val jobs = mutableListOf<Job>()
+        imageModel?.let { jobs += launch { withContext(Dispatchers.IO) { it.loadModel() } } }
+        textModel?.let { jobs += launch { withContext(Dispatchers.IO) { it.loadModel() } } }
+        jobs.joinAll()
+    }
 
     override suspend fun embed(bitmap: Bitmap): FloatArray = withContext(Dispatchers.Default) {
             val model = imageModel ?: throw IllegalStateException("Image model not loaded")
