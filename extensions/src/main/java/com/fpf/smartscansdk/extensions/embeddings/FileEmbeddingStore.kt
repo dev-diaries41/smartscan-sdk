@@ -1,6 +1,7 @@
 package com.fpf.smartscansdk.extensions.embeddings
 
 import android.util.Log
+import androidx.collection.LruCache
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
 import com.fpf.smartscansdk.core.ml.embeddings.IEmbeddingStore
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +15,11 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
-class FileEmbeddingStore(private val file: File, private val embeddingLength: Int):
+class FileEmbeddingStore(
+    private val file: File,
+    private val embeddingLength: Int,
+    private val useCache: Boolean = false
+):
     IEmbeddingStore {
 
     companion object {
@@ -22,7 +27,9 @@ class FileEmbeddingStore(private val file: File, private val embeddingLength: In
         const val TAG = "FileEmbeddingStore"
     }
 
-    override suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO){
+    private var cache: List<Embedding>? = null
+
+    suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO){
         // total bytes: 4 (count) + per-entry (id(8) + date(8) + EMBEDDING_LEN*4)
         val totalBytes = 4 + embeddingsList.size * (8 + 8 + embeddingLength * 4)
         val buffer = ByteBuffer.allocate(totalBytes).order(ByteOrder.LITTLE_ENDIAN)
@@ -45,7 +52,9 @@ class FileEmbeddingStore(private val file: File, private val embeddingLength: In
         }
     }
 
-    override suspend fun load(): List<Embedding> = withContext(Dispatchers.IO){
+    suspend fun load(): List<Embedding> = withContext(Dispatchers.IO){
+        cache?.let { return@withContext it };
+
         FileInputStream(file).channel.use { ch ->
             val fileSize = ch.size()
             val buffer = ch.map(FileChannel.MapMode.READ_ONLY, 0, fileSize).order(ByteOrder.LITTLE_ENDIAN)
@@ -62,12 +71,15 @@ class FileEmbeddingStore(private val file: File, private val embeddingLength: In
                 buffer.position(buffer.position() + embeddingLength * 4)
                 list.add(Embedding(id, date, floats))
             }
+            if(useCache){
+                cache = list
+            }
 
             list
         }
     }
 
-    override suspend fun append(newEmbeddings: List<Embedding>): Unit = withContext(Dispatchers.IO) {
+    override suspend fun add(newEmbeddings: List<Embedding>): Unit = withContext(Dispatchers.IO) {
         if (!file.exists()) {
             save(newEmbeddings)
             return@withContext
@@ -133,6 +145,10 @@ class FileEmbeddingStore(private val file: File, private val embeddingLength: In
         } catch (e: Exception) {
             Log.e(TAG, "Error Removing embeddings", e)
         }
+    }
+
+    override fun clear(){
+        cache = null
     }
 
 }
