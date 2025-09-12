@@ -11,6 +11,7 @@ import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipEmbedder
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
+import com.fpf.smartscansdk.core.ml.embeddings.generatePrototypeEmbedding
 import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
 import com.fpf.smartscansdk.core.processors.IProcessor
 import com.fpf.smartscansdk.core.processors.Metrics
@@ -46,7 +47,8 @@ class VideoIndexer(
 
         if(frameBitmaps == null) throw IllegalStateException("Invalid frames")
 
-        val embedding: FloatArray = embedder.generatePrototypeEmbedding(context, frameBitmaps)
+        val rawEmbeddings = embedder.embedBatch(context.applicationContext, frameBitmaps)
+        val embedding: FloatArray = generatePrototypeEmbedding(context, rawEmbeddings)
 
         return Embedding(
             id = id,
