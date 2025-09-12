@@ -105,7 +105,7 @@ The file approach saves the index as a binary file, then loads it with a memory-
 
 That’s roughly 40× faster at 640 entries and 20× faster at 2.45k. More importantly, the time scales linearly with the number of entries. At 50k entries the load time should still be only 2–3 seconds, which is the same time Room takes just to load 2.45k.
 
-[//]: # (**TODO: Add charts**)
+<img src="./benchmarks/smartscan-load-benchmark.png" alt="smartscan-load-benchmark" style="width:300px">
 
 
 ## **Design Choices**
