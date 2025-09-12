@@ -31,12 +31,11 @@ class VideoIndexer(
     }
 
     override suspend fun onComplete(context: Context, metrics: Metrics.Success) {
-        TODO("Not yet implemented")
-//        store.remove(idsToPurge)
+        // showNotification
     }
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
-        store.append(batch)
+        store.add(batch)
     }
 
     override suspend fun onProcess(context: Context, id: Long): Embedding {
