@@ -22,6 +22,14 @@ interface IEmbeddingStore {
     suspend fun remove(ids: List<Long>)
 }
 
+interface IRetriever {
+    suspend fun query(
+        embedding: FloatArray,
+        topK: Int,
+        threshold: Float
+    ): List<Embedding>
+}
+
 
 interface EmbeddingProvider {
     val embeddingDim: Int? get() = null
