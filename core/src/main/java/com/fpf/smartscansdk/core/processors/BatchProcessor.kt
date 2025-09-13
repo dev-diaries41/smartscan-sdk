@@ -44,7 +44,7 @@ abstract class BatchProcessor<TInput, TOutput>(
                             try {
                                 val output = onProcess(application, item)
                                 val current = processedCount.incrementAndGet()
-                                val progress = (current * 100f) / items.size
+                                val progress = current.toFloat() / items.size
                                 listener?.onProgress(application, progress)
                                 output
                             } catch (e: Exception) {
