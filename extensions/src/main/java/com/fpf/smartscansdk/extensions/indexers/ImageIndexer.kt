@@ -3,6 +3,7 @@ package com.fpf.smartscansdk.extensions.indexers
 import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
+import android.util.Log
 import com.fpf.smartscansdk.core.utils.getBitmapFromUri
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig
@@ -20,7 +21,9 @@ import kotlinx.coroutines.withContext
 
 class ImageIndexer(
     private val embedder: ClipImageEmbedder,
-    private val store: FileEmbeddingStore
+    private val store: FileEmbeddingStore,
+    private val onFailedNotification: ((Context, Metrics.Failure) -> Unit)? = null,
+    private val onCompleteNotification: ((Context, Metrics.Success) -> Unit)? = null
 ): IProcessor<Long, Embedding> {
 
     companion object {
@@ -29,7 +32,12 @@ class ImageIndexer(
     }
 
     override suspend fun onComplete(context: Context, metrics: Metrics.Success) {
-        // showNotification
+        onCompleteNotification?.invoke(context, metrics)
+    }
+
+    override suspend fun onError(context: Context, metrics: Metrics.Failure) {
+        onFailedNotification?.invoke(context, metrics)
+        Log.e(TAG, "Indexing Error", metrics.error)
     }
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {

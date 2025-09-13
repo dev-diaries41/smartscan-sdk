@@ -2,9 +2,6 @@ package com.fpf.smartscansdk.extensions.indexers
 
 import android.content.ContentUris
 import android.content.Context
-import android.graphics.Bitmap
-import android.media.MediaMetadataRetriever
-import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
@@ -15,15 +12,22 @@ import com.fpf.smartscansdk.core.ml.embeddings.generatePrototypeEmbedding
 import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
 import com.fpf.smartscansdk.core.processors.IProcessor
 import com.fpf.smartscansdk.core.processors.Metrics
+import com.fpf.smartscansdk.core.utils.extractFramesFromVideo
 
 // ** Design Constraint**: For on-device vector search, the full index needs to be loaded in-memory (or make an Android native VectorDB)
 // File-based EmbeddingStore is used over a Room version due to significant faster index loading
 // Benchmarks: Memory-Mapped File loading 30-50x speed vs Room (both LiveData and Synchronous),
 // These benchmarks strongly favour the  FileEmbeddingStore for optimal on-device search functionality and UX.
+// **IMPORTANT**: Video frame extraction can fail due to codec incompatibility
 
 class VideoIndexer(
     private val embedder: ClipImageEmbedder,
-    private val store: FileEmbeddingStore
+    private val store: FileEmbeddingStore,
+    private val onFailedNotification: ((Context, Metrics.Failure) -> Unit)? = null,
+    private val onCompleteNotification: ((Context, Metrics.Success) -> Unit)? = null,
+    private val frameCount: Int = 10,
+    private val width: Int = IMAGE_SIZE_X,
+    private val height: Int = IMAGE_SIZE_Y
 ): IProcessor<Long, Embedding> {
 
     companion object {
@@ -32,7 +36,12 @@ class VideoIndexer(
     }
 
     override suspend fun onComplete(context: Context, metrics: Metrics.Success) {
-        // showNotification
+        onCompleteNotification?.invoke(context, metrics)
+    }
+
+    override suspend fun onError(context: Context, metrics: Metrics.Failure) {
+        onFailedNotification?.invoke(context, metrics)
+        Log.e(TAG, "Indexing Error", metrics.error)
     }
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
@@ -43,7 +52,7 @@ class VideoIndexer(
         val contentUri = ContentUris.withAppendedId(
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id
         )
-        val frameBitmaps = extractFramesFromVideo(context, contentUri)
+        val frameBitmaps = extractFramesFromVideo(context, contentUri, width = width, height = height, frameCount = frameCount)
 
         if(frameBitmaps == null) throw IllegalStateException("Invalid frames")
 
@@ -57,38 +66,4 @@ class VideoIndexer(
         )
     }
 
-    private fun extractFramesFromVideo(context: Context, videoUri: Uri, frameCount: Int = 10): List<Bitmap>? {
-        val retriever = MediaMetadataRetriever()
-        return try {
-            retriever.setDataSource(context, videoUri)
-
-            val durationUs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLong()?.times(1000)
-                ?: return null
-
-            val frameList = mutableListOf<Bitmap>()
-
-            for (i in 0 until frameCount) {
-                val frameTimeUs = (i * durationUs) / frameCount
-                val bitmap = retriever.getScaledFrameAtTime(frameTimeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
-                    IMAGE_SIZE_X, IMAGE_SIZE_Y
-                )
-
-                if (bitmap != null) {
-                    frameList.add(bitmap)
-                } else {
-                    // Temporary Fix: Break early if null which suggest codec issue with video
-                    break
-                }
-            }
-
-            if (frameList.isEmpty()) return null
-
-            frameList
-        } catch (e: Exception) {
-            Log.e(TAG, "Error extracting video frames: $e")
-            null
-        } finally {
-            retriever.release()
-        }
-    }
 }
