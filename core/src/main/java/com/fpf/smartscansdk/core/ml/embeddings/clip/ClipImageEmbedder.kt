@@ -26,7 +26,7 @@ class ClipImageEmbedder(
     resources: Resources,
     modelSource: ModelSource,
 ) : ImageEmbeddingProvider {
-    private val imageModel: OnnxModel = when(modelSource){
+    private val model: OnnxModel = when(modelSource){
         is FilePath -> OnnxModel(FileOnnxLoader(modelSource.path))
         is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, modelSource.resId))
     }
@@ -34,10 +34,13 @@ class ClipImageEmbedder(
     override val embeddingDim: Int = 512
     private var closed = false
 
-    suspend fun initialize() = imageModel.loadModel()
+    suspend fun initialize() = model.loadModel()
+
+    fun isInitialized() = model.isLoaded()
 
     override suspend fun embed(bitmap: Bitmap): FloatArray = withContext(Dispatchers.Default) {
-        val model = imageModel ?: throw IllegalStateException("Image model not loaded")
+        if(!isInitialized()) throw IllegalStateException("Model not initialized")
+
         val inputShape = longArrayOf(DIM_BATCH_SIZE.toLong(), DIM_PIXEL_SIZE.toLong(),
             IMAGE_SIZE_X.toLong(), IMAGE_SIZE_Y.toLong()
         )
@@ -73,6 +76,6 @@ class ClipImageEmbedder(
     override fun closeSession() {
         if (closed) return
         closed = true
-        (imageModel as? AutoCloseable)?.close()
+        (model as? AutoCloseable)?.close()
     }
 }

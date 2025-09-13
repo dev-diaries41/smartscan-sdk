@@ -4,7 +4,6 @@ import ai.onnxruntime.OnnxTensor
 import android.app.Application
 import android.content.Context
 import android.content.res.Resources
-import android.graphics.Bitmap
 import android.util.JsonReader
 import com.fpf.smartscansdk.core.R
 import com.fpf.smartscansdk.core.ml.embeddings.TextEmbeddingProvider
@@ -24,15 +23,13 @@ import java.nio.LongBuffer
 import java.util.*
 
 
-/** CLIP embedder using [IModel] abstraction. */
-
 // Using ModelSource enables using with bundle model or local model which has been downloaded
 class ClipTextEmbedder(
     resources: Resources,
     modelSource: ModelSource
 ) : TextEmbeddingProvider {
 
-    private val textModel: OnnxModel = when(modelSource){
+    private val model: OnnxModel = when(modelSource){
         is FilePath -> OnnxModel(FileOnnxLoader(modelSource.path))
         is ResourceId -> OnnxModel(ResourceOnnxLoader(resources, modelSource.resId))
     }
@@ -46,10 +43,13 @@ class ClipTextEmbedder(
     override val embeddingDim: Int = 512
     private var closed = false
 
-    suspend fun initialize() = textModel.loadModel()
+    suspend fun initialize() = model.loadModel()
+
+    fun isInitialized() = model.isLoaded()
 
     override suspend fun embed(text: String): FloatArray = withContext(Dispatchers.Default) {
-        val model = textModel ?: throw IllegalStateException("Text model not loaded")
+        if(!isInitialized()) throw IllegalStateException("Model not initialized")
+
         val clean = Regex("[^A-Za-z0-9 ]").replace(text, "").lowercase()
         var tokens = mutableListOf(tokenBOS) + tokenizer.encode(clean) + tokenEOS
         tokens = tokens.take(77) + List(77 - tokens.size) { 0 }
@@ -90,7 +90,7 @@ class ClipTextEmbedder(
     override fun closeSession() {
         if (closed) return
         closed = true
-        (textModel as? AutoCloseable)?.close()
+        (model as? AutoCloseable)?.close()
     }
 
     private fun getVocab(resources: Resources): Map<String, Int> =
