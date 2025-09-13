@@ -3,12 +3,7 @@ package com.fpf.smartscansdk.core.utils
 import android.content.Context
 import android.graphics.*
 import android.net.Uri
-import android.util.LruCache
 import androidx.core.graphics.scale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.IOException
-
 
 fun centerCrop(bitmap: Bitmap, imageSize: Int): Bitmap {
     val cropX: Int
@@ -40,49 +35,6 @@ fun getScaledDimensions(imgWith: Int, imgHeight: Int, maxSize: Int = 1024): Pair
     } else {
         val scale = maxSize.toFloat() / imgHeight
         (imgWith * scale).toInt() to maxSize
-    }
-}
-
-/**
- * A simple LRU Cache to hold Bitmaps to avoid decoding them multiple times.
- */
-object BitmapCache {
-    private val cache: LruCache<Uri, Bitmap> = object : LruCache<Uri, Bitmap>(calculateMemoryCacheSize()) {
-        override fun sizeOf(key: Uri, value: Bitmap): Int {
-            return value.byteCount / 1024 // in KB
-        }
-    }
-
-    private fun calculateMemoryCacheSize(): Int {
-        val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt() // in KB
-        val calculatedCacheSize = maxMemory / 8
-        val maxAllowedCacheSize = 50 * 1024
-
-        return if (calculatedCacheSize > maxAllowedCacheSize) {
-            maxAllowedCacheSize
-        } else {
-            calculatedCacheSize
-        }
-    }
-
-    fun get(uri: Uri): Bitmap? = cache.get(uri)
-    fun put(uri: Uri, bitmap: Bitmap): Bitmap? = cache.put(uri, bitmap)
-}
-
-
-
-suspend fun loadBitmapFromUri(context: Context, uri: Uri, maxSize: Int): Bitmap? = withContext(Dispatchers.IO) {
-    BitmapCache.get(uri) ?: try {
-        val source = ImageDecoder.createSource(context.contentResolver, uri)
-        val bitmap = ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
-            val (w, h) = getScaledDimensions(imgWith  = info.size.width, imgHeight = info.size.height, maxSize)
-            decoder.setTargetSize(w, h)
-        }
-        BitmapCache.put(uri, bitmap)
-        bitmap
-    } catch (e: IOException) {
-        e.printStackTrace()
-        null
     }
 }
 
