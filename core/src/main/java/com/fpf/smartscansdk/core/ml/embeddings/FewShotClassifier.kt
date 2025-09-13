@@ -6,7 +6,7 @@ import com.fpf.smartscansdk.core.utils.getBitmapFromUri
 
 suspend fun classify(context: Context, imageUri: String, embedder: ImageEmbeddingProvider, prototypeList: List<PrototypeEmbedding>, maxSize: Int): ClassificationResult{
     val bitmap = getBitmapFromUri(context, imageUri.toUri(), maxSize)
-    val imageEmbedding = embedder.generateImageEmbedding(bitmap)
+    val imageEmbedding = embedder.embed(bitmap)
     bitmap.recycle()
 
     val similarities = getSimilarities(imageEmbedding, prototypeList.map { it.embeddings })

@@ -1,6 +1,7 @@
 package com.fpf.smartscansdk.core.processors
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import com.fpf.smartscansdk.core.utils.MemoryUtils
 import kotlinx.coroutines.CancellationException
@@ -12,9 +13,9 @@ import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
 // For BatchProcessor’s use case—long-running, batched,  asynchronous processing—the Application context should be used.
-open class BatchProcessor<TInput, TOutput>(
+abstract class BatchProcessor<TInput, TOutput>(
     private val application: Application,
-    private val processor: IProcessor<TInput, TOutput>? = null,
+    private val listener: IProcessorListener<TInput, TOutput>? = null,
     private val options: ProcessOptions = ProcessOptions(),
 ) {
     companion object {
@@ -41,13 +42,13 @@ open class BatchProcessor<TInput, TOutput>(
                     async {
                         semaphore.withPermit {
                             try {
-                                val output = processor?.onProcess(application, item)
+                                val output = onProcess(application, item)
                                 val current = processedCount.incrementAndGet()
                                 val progress = (current * 100f) / items.size
-                                onProgress(progress)
+                                listener?.onProgress(application, progress)
                                 output
                             } catch (e: Exception) {
-                                processor?.onProcessError(application, e, item)
+                                listener?.onProcessError(application, e, item)
                                 null
                             }
                         }
@@ -55,13 +56,13 @@ open class BatchProcessor<TInput, TOutput>(
                 }
 
                 val outputBatch = deferredResults.mapNotNull { it.await() }
-                processor?.onBatchComplete(application, outputBatch)
+                listener?.onBatchComplete(application, outputBatch)
             }
 
             val endTime = System.currentTimeMillis()
             val metrics = Metrics.Success(processedCount.get(), timeElapsed = endTime - startTime)
 
-            processor?.onComplete(application, metrics)
+            listener?.onComplete(application, metrics)
             metrics
         }
         catch (e: CancellationException) {
@@ -73,12 +74,13 @@ open class BatchProcessor<TInput, TOutput>(
                 timeElapsed = System.currentTimeMillis() - startTime,
                 error = e
             )
-            processor?.onError(application, metrics)
+            listener?.onError(application, metrics)
             metrics
         }
     }
 
-    open suspend fun onProgress(progress: Float){}
+    // Subclasses must implement this
+    protected abstract suspend fun onProcess(context: Context, item: TInput): TOutput
 
 }
 

@@ -1,16 +1,16 @@
 package com.fpf.smartscansdk.extensions.indexers
 
+import android.app.Application
 import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
-import android.util.Log
 import com.fpf.smartscansdk.core.utils.getBitmapFromUri
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipImageEmbedder
-import com.fpf.smartscansdk.core.processors.IProcessor
-import com.fpf.smartscansdk.core.processors.Metrics
-import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
+import com.fpf.smartscansdk.core.processors.BatchProcessor
+import com.fpf.smartscansdk.core.processors.IProcessorListener
+import com.fpf.smartscansdk.core.processors.ProcessOptions
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
@@ -21,27 +21,13 @@ import kotlinx.coroutines.withContext
 
 class ImageIndexer(
     private val embedder: ClipImageEmbedder,
-    private val store: FileEmbeddingStore,
-    private val onFailedNotification: ((Context, Metrics.Failure) -> Unit)? = null,
-    private val onCompleteNotification: ((Context, Metrics.Success) -> Unit)? = null
-): IProcessor<Long, Embedding> {
+    application: Application,
+    listener: IProcessorListener<Long, Embedding>? = null,
+    options: ProcessOptions = ProcessOptions(),
+    ): BatchProcessor<Long, Embedding>(application, listener, options){
 
     companion object {
-        private const val TAG = "ImageIndexer"
         const val INDEX_FILENAME = "image_index.bin"
-    }
-
-    override suspend fun onComplete(context: Context, metrics: Metrics.Success) {
-        onCompleteNotification?.invoke(context, metrics)
-    }
-
-    override suspend fun onError(context: Context, metrics: Metrics.Failure) {
-        onFailedNotification?.invoke(context, metrics)
-        Log.e(TAG, "Indexing Error", metrics.error)
-    }
-
-    override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
-        store.add(batch)
     }
 
     override suspend fun onProcess(context: Context, id: Long): Embedding {

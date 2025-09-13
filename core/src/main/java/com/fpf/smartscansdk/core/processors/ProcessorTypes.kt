@@ -16,10 +16,10 @@ data class ProcessOptions(
     val batchSize: Int = 10
 )
 
-interface IProcessor<TInput, TOutput> {
+interface IProcessorListener<TInput, TOutput> {
     suspend fun onComplete(context: Context, metrics: Metrics.Success){}
+    suspend fun onProgress(context: Context, progress: Float){}
     suspend fun onBatchComplete(context: Context, batch: List<TOutput>){}
-    suspend fun onProcess(context: Context, item: TInput): TOutput
     fun onProcessError(context: Context, error: Exception, item: TInput) {}
     suspend fun onError(context: Context, failureMetrics: Metrics.Failure) {}
 }
