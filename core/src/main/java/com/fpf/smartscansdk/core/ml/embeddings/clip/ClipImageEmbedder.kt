@@ -18,11 +18,8 @@ import com.fpf.smartscansdk.core.ml.models.ModelSource
 import com.fpf.smartscansdk.core.ml.models.ResourceId
 import com.fpf.smartscansdk.core.ml.models.ResourceOnnxLoader
 import com.fpf.smartscansdk.core.processors.BatchProcessor
-import com.fpf.smartscansdk.core.processors.IProcessor
+import com.fpf.smartscansdk.core.processors.IProcessorListener
 import kotlinx.coroutines.*
-
-
-/** CLIP embedder using [IModel] abstraction. */
 
 // Using ModelSource enables using with bundle model or local model which has been downloaded
 class ClipImageEmbedder(
@@ -56,28 +53,26 @@ class ClipImageEmbedder(
 
     suspend fun embedBatch(context: Context, bitmaps: List<Bitmap>): List<FloatArray> {
         val allEmbeddings = mutableListOf<FloatArray>()
-        val iProcessor = object : IProcessor<Bitmap, FloatArray?> {
-            override suspend fun onProcess(context: Context, item: Bitmap): FloatArray? {
-                return try {
-                    embed(item)
-                } catch (_: Exception) {
-                    null
-                }
-            }
-            override suspend fun onBatchComplete(context: Context, outputBatch: List<FloatArray?>) {
-                allEmbeddings.addAll(outputBatch.filterNotNull())
+
+        val listener = object : IProcessorListener<Bitmap, FloatArray> {
+            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {
+                allEmbeddings.addAll(batch)
             }
         }
-        val processor = BatchProcessor<Bitmap, FloatArray?>(context.applicationContext as Application, iProcessor)
+
+        val processor = object : BatchProcessor<Bitmap, FloatArray>(application = context.applicationContext as Application, listener = listener) {
+            override suspend fun onProcess(context: Context, item: Bitmap): FloatArray {
+                return embed(item)
+            }
+        }
+
         processor.run(bitmaps)
         return allEmbeddings
     }
-
 
     override fun closeSession() {
         if (closed) return
         closed = true
         (imageModel as? AutoCloseable)?.close()
     }
-
 }

@@ -4,6 +4,7 @@ import ai.onnxruntime.OnnxTensor
 import android.app.Application
 import android.content.Context
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.util.JsonReader
 import com.fpf.smartscansdk.core.R
 import com.fpf.smartscansdk.core.ml.embeddings.TextEmbeddingProvider
@@ -15,7 +16,7 @@ import com.fpf.smartscansdk.core.ml.models.ModelSource
 import com.fpf.smartscansdk.core.ml.models.ResourceId
 import com.fpf.smartscansdk.core.ml.models.ResourceOnnxLoader
 import com.fpf.smartscansdk.core.processors.BatchProcessor
-import com.fpf.smartscansdk.core.processors.IProcessor
+import com.fpf.smartscansdk.core.processors.IProcessorListener
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -69,19 +70,19 @@ class ClipTextEmbedder(
 
     suspend fun embedBatch(context: Context, texts: List<String>): List<FloatArray> {
         val allEmbeddings = mutableListOf<FloatArray>()
-        val iProcessor = object : IProcessor<String, FloatArray?> {
-            override suspend fun onProcess(context: Context, item: String): FloatArray? {
-                return try {
-                    embed(item)
-                } catch (_: Exception) {
-                    null
-                }
-            }
-            override suspend fun onBatchComplete(context: Context, outputBatch: List<FloatArray?>) {
-                allEmbeddings.addAll(outputBatch.filterNotNull())
+
+        val listener = object : IProcessorListener<String, FloatArray> {
+            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {
+                allEmbeddings.addAll(batch)
             }
         }
-        val processor = BatchProcessor<String, FloatArray?>(context.applicationContext as Application, iProcessor)
+
+        val processor = object : BatchProcessor<String, FloatArray>(application = context.applicationContext as Application, listener = listener) {
+            override suspend fun onProcess(context: Context, item: String): FloatArray {
+                return embed(item)
+            }
+        }
+
         processor.run(texts)
         return allEmbeddings
     }
