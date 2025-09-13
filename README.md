@@ -1,5 +1,26 @@
 # **SmartScanSdk**
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Structure](#key-structure)
+- [Installation](#installation)
+  - [1. Install Core Module](#1-install-core-module)
+  - [2. Install Extensions Module (Optional)](#2-install-extensions-module-optional)
+- [Benchmark Summary](#benchmark-summary)
+  - [The Room Approach](#the-room-approach)
+  - [The File Approach](#the-file-approach)
+- [Design Choices](#design-choices)
+  - [Core and Extensions](#core-and-extensions)
+  - [Constraints](#constraints)
+  - [Batch Processing](#batch-processing)
+  - [Model](#model)
+    - [Model Loaders](#model-loaders)
+  - [Embeddings](#embeddings)
+- [Gradle / Kotlin Setup Notes](#gradle--kotlin-setup-notes)
+
+<a name="overview"></a>
+
 ## **Overview**
 
 SmartScanSdk is a modular Android SDK that powers the **SmartScan app**. It provides tools for:
@@ -42,9 +63,9 @@ SmartScanSdk/
  │   │
  │   └─ utils/                              # General-purpose helpers
  │       ├─ FileUtils.kt
- │       ├─ ImageUtils.kt                   # bitmap/frame preprocessing, scaling, caching
+ │       ├─ ImageUtils.kt                  
  │       ├─ MemoryUtils.kt
- │       └─ VideoUtils.kt                   # frame extraction, video sampling
+ │       └─ VideoUtils.kt                  
  │
  ├─ extensions/                             # Optional, pluggable features
  │   ├─ build.gradle                         # Extensions module Gradle, depends on core
@@ -54,8 +75,8 @@ SmartScanSdk/
  │   ├─ indexers/                           # Media indexing helpers
  │   │   ├─ ImageIndexer.kt
  │   │   └─ VideoIndexer.kt
- │   └─ utils/                              # Extension-level helpers
- │       └─ Notify.kt
+ │                           
+ │       
  │
  └─ settings.gradle / root build.gradle     # Project-level config, Maven publishing setup
 
@@ -243,7 +264,7 @@ class StateFlowBatchProcessor<TInput, TOutput>(
 }
 ```
 
-## Model and Loaders
+### Model
 The architecture separates **model loading** from **inference execution**, enabling type-safe, backend-specific models while keeping the SDK core agnostic. This modular approach allows adding new loaders or backends independently, simplifying testing and portability. Overall, it ensures a clean, extensible design suitable for multi-platform support.
 
 
@@ -257,7 +278,9 @@ abstract class BaseModel<InputTensor> : AutoCloseable {
     abstract fun run(inputs: Map<String, InputTensor>): Map<String, Any>
 }
 
+
 ```
+#### Model Loaders
 * `FilePath` - Allows loading model from a local file path, enabling the use of downloadable models
 **Important Note: The SmartScan app already uses `Resource` based loading**
 
@@ -281,6 +304,11 @@ class ResourceOnnxLoader(private val resources: Resources, @RawRes private val r
     override suspend fun load(): ByteArray = resources.openRawResource(resId).readBytes()
 }
 ```
+
+### Embeddings 
+
+`Embedding` represents a raw vector for a single media item, with `id` corresponding to its `MediaStoreId`. `PrototypeEmbedding` represents an aggregated class-level vector used for few-shot classification, with `id` corresponding to a class identifier. Keeping them separate preserves **semantic clarity** and ensures API consumers can distinguish between per-item embeddings and classification prototypes.
+
 
 ---
 
