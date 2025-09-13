@@ -22,7 +22,8 @@ SmartScanSdk/
  │   │   ├─ embeddings/                     # Interfaces + generic embedding handling
  │   │   │   ├─ clip/                       # CLIP-specific preprocessing + inference
  │   │   │   │   ├─ ByteEncoder.kt
- │   │   │   │   ├─ ClipEmbedder.kt
+ │   │   │   │   ├─ ClipImageEmbedder.kt
+ │   │   │   │   ├─ ClipTextEmbedder.kt
  │   │   │   │   ├─ Constants.kt
  │   │   │   │   ├─ PreProcess.kt
  │   │   │   │   └─ Tokenizer.kt
@@ -30,7 +31,8 @@ SmartScanSdk/
  │   │   │   ├─ EmbeddingUtils.kt
  │   │   │   └─ FewShotClassifier.kt
  │   │   └─ models/
- │   │       ├─ ModelTypes.kt
+ │   │       ├─ BaseModel.kt
+ │   │       ├─ Loaders.kt
  │   │       └─ OnnxModel.kt
  │   │
  │   ├─ processors/                         # Batch processing and pipelines
@@ -42,17 +44,21 @@ SmartScanSdk/
  │       ├─ FileUtils.kt
  │       ├─ ImageUtils.kt                   # bitmap/frame preprocessing, scaling, caching
  │       ├─ MemoryUtils.kt
- │       └─ VideoUtils.kt         # frame extraction, video sampling
+ │       └─ VideoUtils.kt                   # frame extraction, video sampling
  │
  ├─ extensions/                             # Optional, pluggable features
  │   ├─ build.gradle                         # Extensions module Gradle, depends on core
  │   ├─ embeddings/                         # File-based or custom embedding stores
+ │   │   ├─ FileEmbeddingRetriever.kt
  │   │   └─ FileEmbeddingStore.kt
- │   └─ indexers/                           # Media indexing helpers
- │       ├─ ImageIndexer.kt
- │       └─ VideoIndexer.kt
+ │   ├─ indexers/                           # Media indexing helpers
+ │   │   ├─ ImageIndexer.kt
+ │   │   └─ VideoIndexer.kt
+ │   └─ utils/                              # Extension-level helpers
+ │       └─ Notify.kt
  │
  └─ settings.gradle / root build.gradle     # Project-level config, Maven publishing setup
+
 ```
 
 **Notes:**
