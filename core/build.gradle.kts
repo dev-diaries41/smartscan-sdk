@@ -58,7 +58,7 @@ publishing {
     publications {
         register<MavenPublication>("release") {
             groupId = "com.github.dev-diaries41"
-            artifactId = project.name
+            artifactId = "smartscan-${project.name}"
             version = project.findProperty("publishVersion")?.toString() ?: "1.0.0"
 
             afterEvaluate {
