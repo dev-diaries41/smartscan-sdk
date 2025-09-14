@@ -26,6 +26,10 @@ class FileEmbeddingStore(
 
     private var cache: List<Embedding>? = null
 
+    val isLoaded: Boolean
+        get() = cache?.isNotEmpty() == true
+
+
     suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO){
         // total bytes: 4 (count) + per-entry (id(8) + date(8) + EMBEDDING_LEN*4)
         val totalBytes = 4 + embeddingsList.size * (8 + 8 + embeddingLength * 4)
