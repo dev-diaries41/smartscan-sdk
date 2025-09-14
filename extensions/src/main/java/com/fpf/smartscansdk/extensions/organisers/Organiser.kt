@@ -13,13 +13,11 @@ import com.fpf.smartscansdk.core.processors.IProcessorListener
 import com.fpf.smartscansdk.core.processors.ProcessOptions
 import com.fpf.smartscansdk.core.utils.getBitmapFromUri
 
-// In onBatchComplete move files
-// Pass scanId on creation
 class Organiser(
     private val application: Application,
     private val embedder: ClipImageEmbedder,
     private val prototypeList: List<PrototypeEmbedding>,
-    private val scanId: Long,
+    private val scanId: Int,
     listener: IProcessorListener<Uri, OrganiserResult>,
     options: ProcessOptions = ProcessOptions(),
     ): BatchProcessor<Uri, OrganiserResult>(application, listener, options) {
@@ -49,5 +47,5 @@ class Organiser(
 data class OrganiserResult(
     val destination: Uri?,
     val source: Uri,
-    val scanId: Long,
+    val scanId: Int,
     )
