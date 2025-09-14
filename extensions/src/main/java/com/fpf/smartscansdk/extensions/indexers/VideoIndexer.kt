@@ -5,6 +5,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
+import com.fpf.smartscansdk.core.ml.embeddings.IEmbeddingStore
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipImageEmbedder
@@ -22,6 +23,7 @@ import com.fpf.smartscansdk.core.utils.extractFramesFromVideo
 
 class VideoIndexer(
     private val embedder: ClipImageEmbedder,
+    private val store: IEmbeddingStore,
     private val frameCount: Int = 10,
     private val width: Int = IMAGE_SIZE_X,
     private val height: Int = IMAGE_SIZE_Y,
@@ -32,6 +34,10 @@ class VideoIndexer(
 
     companion object {
         const val INDEX_FILENAME = "video_index.bin"
+    }
+
+    override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
+        store.add(batch)
     }
 
     override suspend fun onProcess(context: Context, id: Long): Embedding {
