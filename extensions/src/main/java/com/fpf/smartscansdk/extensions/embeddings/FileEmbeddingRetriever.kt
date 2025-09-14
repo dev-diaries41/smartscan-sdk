@@ -14,7 +14,7 @@ class FileEmbeddingRetriever(
         threshold: Float
     ): List<Embedding> {
 
-        val storedEmbeddings = store.load()
+        val storedEmbeddings = store.getAll()
 
         if (storedEmbeddings.isEmpty()) {
             return emptyList()
