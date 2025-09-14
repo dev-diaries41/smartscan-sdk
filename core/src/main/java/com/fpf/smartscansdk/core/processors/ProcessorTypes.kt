@@ -17,9 +17,9 @@ data class ProcessOptions(
 )
 
 interface IProcessorListener<TInput, TOutput> {
+    suspend fun onActive(context: Context){}
     suspend fun onComplete(context: Context, metrics: Metrics.Success){}
     suspend fun onProgress(context: Context, progress: Float){}
-    suspend fun onBatchComplete(context: Context, batch: List<TOutput>){}
-    fun onProcessError(context: Context, error: Exception, item: TInput) {}
-    suspend fun onError(context: Context, failureMetrics: Metrics.Failure) {}
+    fun onError(context: Context, error: Exception, item: TInput) {}
+    suspend fun onFail(context: Context, failureMetrics: Metrics.Failure) {}
 }
