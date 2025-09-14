@@ -1,7 +1,6 @@
 package com.fpf.smartscansdk.extensions.embeddings
 
 import android.util.Log
-import androidx.collection.LruCache
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
 import com.fpf.smartscansdk.core.ml.embeddings.IEmbeddingStore
 import kotlinx.coroutines.Dispatchers
@@ -18,12 +17,10 @@ import java.nio.channels.FileChannel
 class FileEmbeddingStore(
     private val file: File,
     private val embeddingLength: Int,
-    private val useCache: Boolean = false
 ):
     IEmbeddingStore {
 
     companion object {
-        const val CLIP_EMBEDDING_LENGTH = 512
         const val TAG = "FileEmbeddingStore"
     }
 
@@ -52,7 +49,8 @@ class FileEmbeddingStore(
         }
     }
 
-    suspend fun load(): List<Embedding> = withContext(Dispatchers.IO){
+    // This explicitly makes clear the design constraints that requires the full index to be loaded in memory
+    suspend fun getAll(): List<Embedding> = withContext(Dispatchers.IO){
         cache?.let { return@withContext it };
 
         FileInputStream(file).channel.use { ch ->
@@ -71,16 +69,14 @@ class FileEmbeddingStore(
                 buffer.position(buffer.position() + embeddingLength * 4)
                 list.add(Embedding(id, date, floats))
             }
-            if(useCache){
-                cache = list
-            }
-
+            cache = list
             list
         }
     }
 
     override suspend fun add(newEmbeddings: List<Embedding>): Unit = withContext(Dispatchers.IO) {
         if (!file.exists()) {
+            cache = newEmbeddings
             save(newEmbeddings)
             return@withContext
         }
@@ -131,6 +127,7 @@ class FileEmbeddingStore(
                 }
             }
             channel.force(false)
+            cache = (cache ?: emptyList()) + newEmbeddings
         }
     }
 
@@ -138,7 +135,7 @@ class FileEmbeddingStore(
         if (ids.isEmpty()) return@withContext
 
         try {
-            val embeddings = load()
+            val embeddings = getAll()
             val remaining = embeddings.filter { it.id !in ids }
             save(remaining)
             Log.i(TAG, "Removed ${ids.size} stale embeddings")
