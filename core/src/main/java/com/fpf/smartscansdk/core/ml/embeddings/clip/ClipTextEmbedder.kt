@@ -71,17 +71,13 @@ class ClipTextEmbedder(
     suspend fun embedBatch(context: Context, texts: List<String>): List<FloatArray> {
         val allEmbeddings = mutableListOf<FloatArray>()
 
-        val listener = object : IProcessorListener<String, FloatArray> {
-            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {
-                allEmbeddings.addAll(batch)
-            }
-        }
-
-        val processor = object : BatchProcessor<String, FloatArray>(application = context.applicationContext as Application, listener = listener) {
+        val processor = object : BatchProcessor<String, FloatArray>(application = context.applicationContext as Application) {
             override suspend fun onProcess(context: Context, item: String): FloatArray {
                 return embed(item)
             }
-            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {}
+            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {
+                allEmbeddings.addAll(batch)
+            }
         }
 
         processor.run(texts)

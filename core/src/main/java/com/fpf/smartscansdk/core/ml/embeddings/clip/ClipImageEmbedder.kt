@@ -57,17 +57,13 @@ class ClipImageEmbedder(
     suspend fun embedBatch(context: Context, bitmaps: List<Bitmap>): List<FloatArray> {
         val allEmbeddings = mutableListOf<FloatArray>()
 
-        val listener = object : IProcessorListener<Bitmap, FloatArray> {
-            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {
-                allEmbeddings.addAll(batch)
-            }
-        }
-
-        val processor = object : BatchProcessor<Bitmap, FloatArray>(application = context.applicationContext as Application, listener = listener) {
+        val processor = object : BatchProcessor<Bitmap, FloatArray>(application = context.applicationContext as Application) {
             override suspend fun onProcess(context: Context, item: Bitmap): FloatArray {
                 return embed(item)
             }
-            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {}
+            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {
+                allEmbeddings.addAll(batch)
+            }
         }
 
         processor.run(bitmaps)
