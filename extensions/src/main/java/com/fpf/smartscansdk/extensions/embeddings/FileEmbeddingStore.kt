@@ -36,6 +36,8 @@ class FileEmbeddingStore(
 
     suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO){
         if (embeddingsList.isEmpty()) return@withContext
+        cache = embeddingsList
+
         // total bytes: 4 (count) + per-entry (id(8) + date(8) + EMBEDDING_LEN*4)
         val totalBytes = 4 + embeddingsList.size * (8 + 8 + embeddingLength * 4)
         val buffer = ByteBuffer.allocate(totalBytes).order(ByteOrder.LITTLE_ENDIAN)
@@ -87,7 +89,6 @@ class FileEmbeddingStore(
         if (newEmbeddings.isEmpty()) return@withContext
 
         if (!file.exists()) {
-            cache = newEmbeddings
             save(newEmbeddings)
             return@withContext
         }
