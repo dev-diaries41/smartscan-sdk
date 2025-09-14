@@ -14,7 +14,6 @@ import com.fpf.smartscansdk.core.processors.ProcessOptions
 import com.fpf.smartscansdk.core.utils.getBitmapFromUri
 
 // In onBatchComplete move files
-// In onComplete save lastUsedPrototysClasses
 // Pass scanId on creation
 class Organiser(
     private val application: Application,
