@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger
 // For BatchProcessor’s use case—long-running, batched,  asynchronous processing—the Application context should be used.
 abstract class BatchProcessor<TInput, TOutput>(
     private val application: Application,
-    private val listener: IProcessorListener<TInput, TOutput>? = null,
+    protected val listener: IProcessorListener<TInput, TOutput>? = null,
     private val options: ProcessOptions = ProcessOptions(),
 ) {
     companion object {
@@ -86,6 +86,7 @@ abstract class BatchProcessor<TInput, TOutput>(
 
     // Forces all SDK users to consciously handle batch events rather than optionally relying on listeners.
     // This can prevent subtle bugs where batch-level behavior is forgotten.
+    // Subclasses can optionally delegate to listener (client app) by simply calling listener.onBatchComplete in implementation
     protected abstract suspend fun onBatchComplete(context: Context, batch: List<TOutput>)
 
 }
