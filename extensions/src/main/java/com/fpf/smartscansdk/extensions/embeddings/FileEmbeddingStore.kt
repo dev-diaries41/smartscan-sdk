@@ -15,7 +15,8 @@ import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
 class FileEmbeddingStore(
-    private val file: File,
+    dir: File,
+    filename: String,
     private val embeddingLength: Int,
 ):
     IEmbeddingStore {
@@ -24,13 +25,17 @@ class FileEmbeddingStore(
         const val TAG = "FileEmbeddingStore"
     }
 
+    private val file = File(dir, filename)
     private var cache: List<Embedding>? = null
+
+    val exists: Boolean get() = file.exists()
 
     val isLoaded: Boolean
         get() = cache != null
 
 
     suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO){
+        if (embeddingsList.isEmpty()) return@withContext
         // total bytes: 4 (count) + per-entry (id(8) + date(8) + EMBEDDING_LEN*4)
         val totalBytes = 4 + embeddingsList.size * (8 + 8 + embeddingLength * 4)
         val buffer = ByteBuffer.allocate(totalBytes).order(ByteOrder.LITTLE_ENDIAN)
@@ -79,6 +84,8 @@ class FileEmbeddingStore(
     }
 
     override suspend fun add(newEmbeddings: List<Embedding>): Unit = withContext(Dispatchers.IO) {
+        if (newEmbeddings.isEmpty()) return@withContext
+
         if (!file.exists()) {
             cache = newEmbeddings
             save(newEmbeddings)
