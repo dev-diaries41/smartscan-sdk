@@ -27,7 +27,7 @@ class FileEmbeddingStore(
     private var cache: List<Embedding>? = null
 
     val isLoaded: Boolean
-        get() = cache?.isNotEmpty() == true
+        get() = cache != null
 
 
     suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO){
