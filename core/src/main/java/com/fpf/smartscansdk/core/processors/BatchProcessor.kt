@@ -34,6 +34,8 @@ abstract class BatchProcessor<TInput, TOutput>(
 
             val memoryUtils = MemoryUtils(application, options.memory)
 
+            listener?.onActive(application)
+
             for (batch in items.chunked(options.batchSize)) {
                 val currentConcurrency = memoryUtils.calculateConcurrencyLevel()
                 val semaphore = Semaphore(currentConcurrency)
@@ -48,7 +50,7 @@ abstract class BatchProcessor<TInput, TOutput>(
                                 listener?.onProgress(application, progress)
                                 output
                             } catch (e: Exception) {
-                                listener?.onProcessError(application, e, item)
+                                listener?.onError(application, e, item)
                                 null
                             }
                         }
@@ -56,7 +58,7 @@ abstract class BatchProcessor<TInput, TOutput>(
                 }
 
                 val outputBatch = deferredResults.mapNotNull { it.await() }
-                listener?.onBatchComplete(application, outputBatch)
+                onBatchComplete(application, outputBatch)
             }
 
             val endTime = System.currentTimeMillis()
@@ -74,13 +76,17 @@ abstract class BatchProcessor<TInput, TOutput>(
                 timeElapsed = System.currentTimeMillis() - startTime,
                 error = e
             )
-            listener?.onError(application, metrics)
+            listener?.onFail(application, metrics)
             metrics
         }
     }
 
     // Subclasses must implement this
     protected abstract suspend fun onProcess(context: Context, item: TInput): TOutput
+
+    // Forces all SDK users to consciously handle batch events rather than optionally relying on listeners.
+    // This can prevent subtle bugs where batch-level behavior is forgotten.
+    protected abstract suspend fun onBatchComplete(context: Context, batch: List<TOutput>)
 
 }
 
