@@ -23,7 +23,7 @@ class Organiser(
     ): BatchProcessor<Uri, OrganiserResult>(application, listener, options) {
     companion object {
         private const val TAG = "Organiser"
-        private const val PREF_KEY_LAST_USED_CLASSIFICATION_DIRS = "last_used_destinations"
+        const val PREF_KEY_LAST_USED_CLASSIFICATION_DIRS = "last_used_destinations"
     }
 
     fun close() {
