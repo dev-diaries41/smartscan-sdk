@@ -7,4 +7,5 @@ object ClipConfig {
     const val IMAGE_SIZE_X = 224
     const val IMAGE_SIZE_Y = 224
     const val DEFAULT_IMAGE_DISPLAY_SIZE = 1024
+    const val CLIP_EMBEDDING_LENGTH = 512
 }
