@@ -5,7 +5,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
-import com.fpf.smartscansdk.core.ml.embeddings.IEmbeddingStore
+import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.CLIP_EMBEDDING_LENGTH
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipImageEmbedder
@@ -14,6 +14,7 @@ import com.fpf.smartscansdk.core.processors.BatchProcessor
 import com.fpf.smartscansdk.core.processors.IProcessorListener
 import com.fpf.smartscansdk.core.processors.ProcessOptions
 import com.fpf.smartscansdk.core.utils.extractFramesFromVideo
+import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
 
 // ** Design Constraint**: For on-device vector search, the full index needs to be loaded in-memory (or make an Android native VectorDB)
 // File-based EmbeddingStore is used over a Room version due to significant faster index loading
@@ -23,7 +24,6 @@ import com.fpf.smartscansdk.core.utils.extractFramesFromVideo
 
 class VideoIndexer(
     private val embedder: ClipImageEmbedder,
-    private val store: IEmbeddingStore,
     private val frameCount: Int = 10,
     private val width: Int = IMAGE_SIZE_X,
     private val height: Int = IMAGE_SIZE_Y,
@@ -35,6 +35,8 @@ class VideoIndexer(
     companion object {
         const val INDEX_FILENAME = "video_index.bin"
     }
+
+    private val store = FileEmbeddingStore(application.filesDir, INDEX_FILENAME, CLIP_EMBEDDING_LENGTH)
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
         store.add(batch)

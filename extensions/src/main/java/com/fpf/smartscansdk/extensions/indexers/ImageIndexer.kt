@@ -12,6 +12,7 @@ import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipImageEmbedder
 import com.fpf.smartscansdk.core.processors.BatchProcessor
 import com.fpf.smartscansdk.core.processors.IProcessorListener
 import com.fpf.smartscansdk.core.processors.ProcessOptions
+import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
@@ -22,7 +23,6 @@ import kotlinx.coroutines.withContext
 
 class ImageIndexer(
     private val embedder: ClipImageEmbedder,
-    private val store: IEmbeddingStore,
     application: Application,
     listener: IProcessorListener<Long, Embedding>? = null,
     options: ProcessOptions = ProcessOptions(),
@@ -31,6 +31,8 @@ class ImageIndexer(
     companion object {
         const val INDEX_FILENAME = "image_index.bin"
     }
+
+    private val store = FileEmbeddingStore(application.filesDir, INDEX_FILENAME, ClipConfig.CLIP_EMBEDDING_LENGTH)
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
         store.add(batch)
