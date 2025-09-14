@@ -67,6 +67,7 @@ class ClipImageEmbedder(
             override suspend fun onProcess(context: Context, item: Bitmap): FloatArray {
                 return embed(item)
             }
+            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {}
         }
 
         processor.run(bitmaps)

@@ -81,6 +81,7 @@ class ClipTextEmbedder(
             override suspend fun onProcess(context: Context, item: String): FloatArray {
                 return embed(item)
             }
+            override suspend fun onBatchComplete(context: Context, batch: List<FloatArray>) {}
         }
 
         processor.run(texts)
