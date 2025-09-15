@@ -113,23 +113,33 @@ implementation("com.github.dev-diaries41:extensions:1.0.0")
 ---
 
 ## Benchmark Summary
-### **The Room Approach**
 
-The schema for the Room version was `id (long), date (long), embedding (float array)`. In the SearchViewModel the index was loaded as LiveData. Benchmarks for loading:
+### Real-Life Test Results````
+| Number of Embeddings | Room Load Time | File Load Time |
+|---------------------|----------------|----------------|
+| 640                 | 1,237.5 ms    | 32 ms          |
+| 2,450               | 2,737.2 ms    | 135 ms         |
 
-* 640 entries: 1237.5ms
-* 2.45k entries: 2737.2ms
+**Observations:**
+- Room loads are much slower due to SQLite row-by-row deserialization and LiveData overhead.
+- File-based loading with memory-mapped binary file is significantly faster, even for small datasets.
 
 ---
 
-### **The File Approach**
+### Instrumented Test Benchmarks
 
-The file approach saves the index as a binary file, then loads it with a memory-mapped file. This allows for much faster reads. Benchmarks for the same datasets:
+| Number of Embeddings | Room Load Time | File Load Time |
+|---------------------|----------------|----------------|
+| 2,500               | 2,539 ms       | 20 ms          |
+| 10,000              | 7,014 ms       | 49 ms          |
+| 20,000              | 21,729 ms      | 75 ms          |
+| 30,000              | 48,547 ms      | 112 ms         |
+| 40,000              | 83,496 ms      | 82 ms          |
 
-* 640 entries: 32ms
-* 2.45k entries: 135ms
-
-That’s roughly 40× faster at 640 entries and 20× faster at 2.45k. More importantly, the time scales linearly with the number of entries. At 50k entries the load time should still be only 2–3 seconds, which is the same time Room takes just to load 2.45k.
+**Observations:**
+- Room scales roughly linearly with dataset size.
+- File-based approach maintains extremely fast load times, even for tens of thousands of embeddings.
+- The performance gap between Room and File approaches grows with dataset size.
 
 <img src="./benchmarks/smartscan-load-benchmark.png" alt="smartscan-load-benchmark" style="width:300px">
 
