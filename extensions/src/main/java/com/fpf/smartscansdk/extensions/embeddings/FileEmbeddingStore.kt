@@ -34,29 +34,43 @@ class FileEmbeddingStore(
         get() = cache != null
 
 
-    suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO){
+    // prevent OOM in FileEmbeddingStore.save() by batching writes
+    suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO) {
         if (embeddingsList.isEmpty()) return@withContext
         cache = embeddingsList
 
-        // total bytes: 4 (count) + per-entry (id(8) + date(8) + EMBEDDING_LEN*4)
-        val totalBytes = 4 + embeddingsList.size * (8 + 8 + embeddingLength * 4)
-        val buffer = ByteBuffer.allocate(totalBytes).order(ByteOrder.LITTLE_ENDIAN)
+        FileOutputStream(file).channel.use { channel ->
+            val header = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            header.putInt(embeddingsList.size)
+            header.flip()
+            channel.write(header)
 
-        buffer.putInt(embeddingsList.size)
-        for (embedding in embeddingsList) {
-            if (embedding.embeddings.size != embeddingLength) {
-                throw IllegalArgumentException("Embedding length must be $embeddingLength")
-            }
-            buffer.putLong(embedding.id)
-            buffer.putLong(embedding.date)
-            for (f in embedding.embeddings) {
-                buffer.putFloat(f)
-            }
-        }
+            val batchSize = 1000 // number of embeddings per batch
+            var index = 0
 
-        buffer.flip()
-        FileOutputStream(file).channel.use { ch ->
-            ch.write(buffer)
+            while (index < embeddingsList.size) {
+                val end = minOf(index + batchSize, embeddingsList.size)
+                val batch = embeddingsList.subList(index, end)
+
+                // Allocate a smaller buffer for this batch
+                val batchBuffer = ByteBuffer.allocate(batch.size * (8 + 8 + embeddingLength * 4))
+                    .order(ByteOrder.LITTLE_ENDIAN)
+
+                for (embedding in batch) {
+                    if (embedding.embeddings.size != embeddingLength) {
+                        throw IllegalArgumentException("Embedding length must be $embeddingLength")
+                    }
+                    batchBuffer.putLong(embedding.id)
+                    batchBuffer.putLong(embedding.date)
+                    for (f in embedding.embeddings) {
+                        batchBuffer.putFloat(f)
+                    }
+                }
+
+                batchBuffer.flip()
+                channel.write(batchBuffer)
+                index = end
+            }
         }
     }
 
