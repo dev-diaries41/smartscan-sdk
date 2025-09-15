@@ -154,121 +154,88 @@ For all the above reasons its important concurrency is handled dynamically and e
 
 ```kotlin
 // For BatchProcessor’s use case—long-running, batched,  asynchronous processing—the Application context should be used.
-open class BatchProcessor<TInput, TOutput>(
-    private val application: Application,
-    private val processor: IProcessor<TInput, TOutput>? = null,
-    private val options: ProcessOptions = ProcessOptions(),
+abstract class BatchProcessor<TInput, TOutput>(
+  private val application: Application,
+  protected val listener: IProcessorListener<TInput, TOutput>? = null,
+  private val options: ProcessOptions = ProcessOptions(),
 ) {
-    companion object {
-        const val TAG = "BatchProcessor"
-    }
+  companion object {
+    const val TAG = "BatchProcessor"
+  }
 
-    open suspend fun run(items: List<TInput>): Metrics = withContext(Dispatchers.IO) {
-        val processedCount = AtomicInteger(0)
-        val startTime = System.currentTimeMillis()
+  open suspend fun run(items: List<TInput>): Metrics = withContext(Dispatchers.IO) {
+    val processedCount = AtomicInteger(0)
+    val startTime = System.currentTimeMillis()
 
-        try {
-            if (items.isEmpty()) {
-                Log.w(TAG, "No items to process.")
-                return@withContext Metrics.Success()
+    try {
+      if (items.isEmpty()) {
+        Log.w(TAG, "No items to process.")
+        return@withContext Metrics.Success()
+      }
+
+      val memoryUtils = MemoryUtils(application, options.memory)
+
+      listener?.onActive(application)
+
+      for (batch in items.chunked(options.batchSize)) {
+        val currentConcurrency = memoryUtils.calculateConcurrencyLevel()
+        val semaphore = Semaphore(currentConcurrency)
+
+        val deferredResults = batch.map { item ->
+          async {
+            semaphore.withPermit {
+              try {
+                val output = onProcess(application, item)
+                val current = processedCount.incrementAndGet()
+                val progress = current.toFloat() / items.size
+                listener?.onProgress(application, progress)
+                output
+              } catch (e: Exception) {
+                listener?.onError(application, e, item)
+                null
+              }
             }
-
-            val memoryUtils = MemoryUtils(application, options.memory)
-
-            for (batch in items.chunked(options.batchSize)) {
-                val currentConcurrency = memoryUtils.calculateConcurrencyLevel()
-                val semaphore = Semaphore(currentConcurrency)
-
-                val deferredResults = batch.map { item ->
-                    async {
-                        semaphore.withPermit {
-                            try {
-                                val output = processor?.onProcess(application, item)
-                                val current = processedCount.incrementAndGet()
-                                val progress = (current * 100f) / items.size
-                                onProgress(progress)
-                                output
-                            } catch (e: Exception) {
-                                processor?.onProcessError(application, e, item)
-                                null
-                            }
-                        }
-                    }
-                }
-
-                val outputBatch = deferredResults.mapNotNull { it.await() }
-                processor?.onBatchComplete(application, outputBatch)
-            }
-
-            val endTime = System.currentTimeMillis()
-            val metrics = Metrics.Success(processedCount.get(), timeElapsed = endTime - startTime)
-
-            processor?.onComplete(application, metrics)
-            metrics
+          }
         }
-        catch (e: CancellationException) {
-            throw e
-        }
-        catch (e: Exception) {
-            val metrics = Metrics.Failure(
-                processedBeforeFailure = processedCount.get(),
-                timeElapsed = System.currentTimeMillis() - startTime,
-                error = e
-            )
-            processor?.onError(application, metrics)
-            metrics
-        }
+
+        val outputBatch = deferredResults.mapNotNull { it.await() }
+        onBatchComplete(application, outputBatch)
+      }
+
+      val endTime = System.currentTimeMillis()
+      val metrics = Metrics.Success(processedCount.get(), timeElapsed = endTime - startTime)
+
+      listener?.onComplete(application, metrics)
+      metrics
     }
+    catch (e: CancellationException) {
+      throw e
+    }
+    catch (e: Exception) {
+      val metrics = Metrics.Failure(
+        processedBeforeFailure = processedCount.get(),
+        timeElapsed = System.currentTimeMillis() - startTime,
+        error = e
+      )
+      listener?.onFail(application, metrics)
+      metrics
+    }
+  }
 
-    open suspend fun onProgress(progress: Float){}
+  // Subclasses must implement this
+  protected abstract suspend fun onProcess(context: Context, item: TInput): TOutput
+
+  // Forces all SDK users to consciously handle batch events rather than optionally relying on listeners.
+  // This can prevent subtle bugs where batch-level behavior is forgotten.
+  // Subclasses can optionally delegate to listener (client app) by simply calling listener.onBatchComplete in implementation
+  protected abstract suspend fun onBatchComplete(context: Context, batch: List<TOutput>)
 
 }
-```
 
-```kotlin
-// State Flow version for UI observable progress updates 
-
-class StateFlowBatchProcessor<TInput, TOutput>(
-    application: Application,
-    processor: IProcessor<TInput, TOutput>? = null,
-    options: ProcessOptions = ProcessOptions()
-) : BatchProcessor<TInput, TOutput>(application, processor, options) {
-
-    private val _progress = MutableStateFlow(0f)
-    val progress: StateFlow<Float> = _progress
-
-    private val _status = MutableStateFlow(ProcessorStatus.IDLE)
-    val status: StateFlow<ProcessorStatus> = _status
-
-    override suspend fun run(items: List<TInput>): Metrics {
-        _status.value = ProcessorStatus.ACTIVE
-
-        val metrics = super.run(items)
-
-        if (metrics is Metrics.Success) {
-            _progress.value = 100f
-            _status.value = ProcessorStatus.COMPLETE
-        } else if (metrics is Metrics.Failure) {
-            _status.value = ProcessorStatus.FAILED
-        }
-        return metrics
-    }
-
-    override suspend fun onProgress(progress: Float) {
-        _progress.value = progress
-    }
-
-    fun resetProgress() {
-        _progress.value = 0f
-        _status.value = ProcessorStatus.IDLE
-    }
-}
 ```
 
 ### Model
 The architecture separates **model loading** from **inference execution**, enabling type-safe, backend-specific models while keeping the SDK core agnostic. This modular approach allows adding new loaders or backends independently, simplifying testing and portability. Overall, it ensures a clean, extensible design suitable for multi-platform support.
-
-
 
 ```kotlin
 abstract class BaseModel<InputTensor> : AutoCloseable {
@@ -309,8 +276,6 @@ class ResourceOnnxLoader(private val resources: Resources, @RawRes private val r
 ### Embeddings 
 
 `Embedding` represents a raw vector for a single media item, with `id` corresponding to its `MediaStoreId`. `PrototypeEmbedding` represents an aggregated class-level vector used for few-shot classification, with `id` corresponding to a class identifier. Keeping them separate preserves **semantic clarity** and ensures API consumers can distinguish between per-item embeddings and classification prototypes.
-
-
 ---
 
 ## **Gradle / Kotlin Setup Notes**
