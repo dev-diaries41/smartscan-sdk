@@ -38,7 +38,7 @@ The SDK is **highly extensible**, allowing developers to plug in new ML models o
 ```
 SmartScanSdk/
  ├─ core/                                   # Minimal, essential functionality
- │   ├─ build.gradle                         # Core module Gradle, Maven publishing enabled
+ │   ├─ build.gradle                        # Core module Gradle, Maven publishing enabled
  │   ├─ ml/                                 # On-device ML infra + models
  │   │   ├─ embeddings/                     # Interfaces + generic embedding handling
  │   │   │   ├─ clip/                       # CLIP-specific preprocessing + inference
@@ -58,27 +58,28 @@ SmartScanSdk/
  │   │
  │   ├─ processors/                         # Batch processing and pipelines
  │   │   ├─ BatchProcessor.kt
- │   │   ├─ ProcessorTypes.kt
- │   │   └─ StateFlowBatchProcessor.kt
+ │   │   └─ ProcessorTypes.kt
  │   │
  │   └─ utils/                              # General-purpose helpers
- │       ├─ FileUtils.kt
  │       ├─ ImageUtils.kt                  
  │       ├─ MemoryUtils.kt
  │       └─ VideoUtils.kt                  
  │
  ├─ extensions/                             # Optional, pluggable features
- │   ├─ build.gradle                         # Extensions module Gradle, depends on core
+ │   ├─ build.gradle                        # Extensions module Gradle, depends on core
  │   ├─ embeddings/                         # File-based or custom embedding stores
  │   │   ├─ FileEmbeddingRetriever.kt
  │   │   └─ FileEmbeddingStore.kt
+ │   │
  │   ├─ indexers/                           # Media indexing helpers
  │   │   ├─ ImageIndexer.kt
  │   │   └─ VideoIndexer.kt
- │                           
- │       
+ │   │
+ │   └─ organisers/                         # Higher-level orchestration
+ │       └─ Organiser.kt
  │
- └─ settings.gradle / root build.gradle     # Project-level config, Maven publishing setup
+ ├─ build.gradle                            # Root build config (publishing, plugins, etc.)
+ └─ settings.gradle                         # Declares `core` and `extensions` modules
 
 ```
 
