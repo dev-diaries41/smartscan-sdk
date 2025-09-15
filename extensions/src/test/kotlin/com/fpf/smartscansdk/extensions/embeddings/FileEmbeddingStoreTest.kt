@@ -1,0 +1,171 @@
+package com.fpf.smartscansdk.extensions.embeddings
+
+import android.util.Log
+import com.fpf.smartscansdk.core.ml.embeddings.Embedding
+import io.mockk.every
+import io.mockk.mockkStatic
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
+import org.junit.jupiter.api.io.TempDir
+import java.io.File
+import java.io.IOException
+import java.io.RandomAccessFile
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
+
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class FileEmbeddingStoreTest {
+
+    @BeforeEach
+    fun setup() {
+        mockkStatic(android.util.Log::class)
+        every { Log.d(any<String>(), any<String>()) } returns 0
+        every { Log.e(any<String>(), any<String>()) } returns 0
+        every { Log.i(any<String>(), any<String>()) } returns 0
+        every { Log.w(any<String>(), any<String>()) } returns 0
+    }
+
+    @TempDir
+    lateinit var tempDir: File
+
+    private val embeddingLength = 4
+
+    private fun createStore(fileName: String = "embeddings.bin") =
+        FileEmbeddingStore(tempDir, fileName, embeddingLength)
+
+    private fun embedding(id: Long, date: Long, values: FloatArray) =
+        Embedding(id, date, values)
+
+    @Test
+    fun `save and load embeddings round trip`() = runTest {
+        val store = createStore()
+        val embeddings = listOf(
+            embedding(1, 100, floatArrayOf(0.1f, 0.2f, 0.3f, 0.4f)),
+            embedding(2, 200, floatArrayOf(0.5f, 0.6f, 0.7f, 0.8f))
+        )
+
+        store.save(embeddings)
+        val loaded = store.getAll()
+
+        Assertions.assertEquals(2, loaded.size)
+        Assertions.assertEquals(embeddings[0].id, loaded[0].id)
+        Assertions.assertEquals(embeddings[1].embeddings.toList(), loaded[1].embeddings.toList())
+        Assertions.assertTrue(store.isLoaded)
+    }
+
+    @Test
+    fun `add embeddings appends correctly`() = runTest {
+        val store = createStore()
+        val first = listOf(embedding(1, 100, floatArrayOf(1f, 2f, 3f, 4f)))
+        val second = listOf(embedding(2, 200, floatArrayOf(5f, 6f, 7f, 8f)))
+
+        store.save(first)
+        store.add(second)
+
+        val all = store.getAll()
+        Assertions.assertEquals(2, all.size)
+        Assertions.assertEquals(1, all[0].id)
+        Assertions.assertEquals(2, all[1].id)
+    }
+
+    @Test
+    fun `remove embeddings deletes specified ids`() = runTest {
+        val store = createStore()
+        val embeddings = listOf(
+            embedding(1L, 100, floatArrayOf(1f, 1f, 1f, 1f)),
+            embedding(2L, 200, floatArrayOf(2f, 2f, 2f, 2f)),
+            embedding(3L, 300, floatArrayOf(3f, 3f, 3f, 3f))
+        )
+
+        store.save(embeddings)
+        store.remove(listOf(2L))
+
+        val remaining = store.getAll()
+        Assertions.assertEquals(2, remaining.size)
+        Assertions.assertFalse(remaining.any { it.id == 2L })
+    }
+
+    @Test
+    fun `cache is cleared and reloads`() = runTest {
+        val store = createStore()
+        val embeddings = listOf(embedding(1, 100, FloatArray(embeddingLength) { 0.1f }))
+        store.save(embeddings)
+
+        val firstLoad = store.getAll()
+        Assertions.assertTrue(store.isLoaded)
+
+        store.clear()
+        Assertions.assertFalse(store.isLoaded)
+
+        val secondLoad = store.getAll()
+        assertTrue(firstLoad.zip(secondLoad).all { (a, b) ->
+            a.id == b.id && a.date == b.date && a.embeddings.contentEquals(b.embeddings)
+        })
+    }
+
+    @Test
+    fun `saving embedding with wrong length throws`() = runTest {
+        val store = createStore()
+        val bad = listOf(embedding(1, 100, floatArrayOf(1f, 2f))) // too short
+
+        assertFailsWith<IllegalArgumentException> {
+            store.save(bad)
+        }
+    }
+
+    @Test
+    fun `corrupt header causes IOException`() = runTest {
+        val store = createStore()
+        val embeddings = listOf(embedding(1, 100, FloatArray(embeddingLength) { 1f }))
+        store.save(embeddings)
+
+        // corrupt first 4 bytes (count header)
+        RandomAccessFile(File(tempDir, "embeddings.bin"), "rw").use { raf ->
+            val buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            buf.putInt(Int.MAX_VALUE) // absurdly large
+            buf.flip()
+            raf.channel.position(0)
+            raf.channel.write(buf)
+        }
+
+        assertFailsWith<IOException> {
+            store.add(listOf(embedding(2, 200, FloatArray(embeddingLength) { 2f })))
+        }
+    }
+
+    @Test
+    fun `benchmark loading 2500 realistic embeddings`() = runTest {
+        val embeddingLength = 512
+        val numEmbeddings = 25000
+        val store = FileEmbeddingStore(tempDir, "realistic_embeddings.bin", embeddingLength)
+
+        // Create realistic embeddings with pseudo-random float data
+        val embeddings = (1..numEmbeddings.toLong()).map { id ->
+            val values = FloatArray(embeddingLength) { kotlin.random.Random.nextFloat() }
+            Embedding(id, System.currentTimeMillis(), values)
+        }
+
+        // Save embeddings to disk
+        store.save(embeddings)
+
+        // Clear cache to force disk read
+        store.clear()
+        assert(!store.isLoaded)
+
+        // Measure time to load all embeddings from disk
+        val timeNanos = kotlin.system.measureNanoTime {
+            val loaded = store.getAll()
+            assert(loaded.size == numEmbeddings)
+        }
+
+        println("Loading $numEmbeddings realistic embeddings of length $embeddingLength took ${timeNanos / 1_000_000.0} ms")
+    }
+
+
+}
