@@ -2,6 +2,8 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("maven-publish")
+    id("com.google.devtools.ksp")
+
 }
 
 android {
@@ -10,6 +12,16 @@ android {
 
     defaultConfig {
         minSdk = 30
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    packaging {
+        resources.excludes.addAll(
+            listOf(
+                "META-INF/LICENSE.md",
+                "META-INF/LICENSE-notice.md",
+            )
+        )
     }
 
     buildTypes {
@@ -60,6 +72,19 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
     testImplementation("io.mockk:mockk:1.14.5")
     testImplementation(kotlin("test"))
+
+    // Android instrumented tests
+    androidTestImplementation("androidx.test:core:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit-ktx:1.3.0")
+    androidTestImplementation("androidx.test:runner:1.6.1")
+    androidTestImplementation("io.mockk:mockk-android:1.14.5")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    // room tests
+    androidTestImplementation("androidx.room:room-runtime:2.7.2")
+    androidTestImplementation("androidx.room:room-ktx:2.7.2")
+    androidTestImplementation("androidx.room:room-testing:2.7.2")
+    ksp("androidx.room:room-compiler:2.7.2") // only for annotation processing
 
 }
 
