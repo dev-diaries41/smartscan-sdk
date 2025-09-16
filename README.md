@@ -97,7 +97,7 @@ SmartScanSdk/
 Add the dependency in your app module:
 
 ```gradle
-implementation("com.github.dev-diaries41:core:1.0.0")
+implementation("com.github.dev-diaries41:smartscan-core:1.0.0")
 ```
 
 ### **2. Install Extensions Module (Optional)**
@@ -105,7 +105,7 @@ implementation("com.github.dev-diaries41:core:1.0.0")
 Add the dependency in your app module:
 
 ```gradle
-implementation("com.github.dev-diaries41:extensions:1.0.0")
+implementation("com.github.dev-diaries41:smartscan-extensions:1.0.0")
 ```
 
 > `extensions` depends on `core` transitively, so adding `extensions` alone is sufficient if you need both.
@@ -164,16 +164,16 @@ For all the above reasons its important concurrency is handled dynamically and e
 
 ```kotlin
 // For BatchProcessor’s use case—long-running, batched,  asynchronous processing—the Application context should be used.
-abstract class BatchProcessor<TInput, TOutput>(
+abstract class BatchProcessor<Input, Output>(
   private val application: Application,
-  protected val listener: IProcessorListener<TInput, TOutput>? = null,
+  protected val listener: IProcessorListener<Input, Output>? = null,
   private val options: ProcessOptions = ProcessOptions(),
 ) {
   companion object {
     const val TAG = "BatchProcessor"
   }
 
-  open suspend fun run(items: List<TInput>): Metrics = withContext(Dispatchers.IO) {
+  open suspend fun run(items: List<Input>): Metrics = withContext(Dispatchers.IO) {
     val processedCount = AtomicInteger(0)
     val startTime = System.currentTimeMillis()
 
@@ -233,12 +233,12 @@ abstract class BatchProcessor<TInput, TOutput>(
   }
 
   // Subclasses must implement this
-  protected abstract suspend fun onProcess(context: Context, item: TInput): TOutput
+  protected abstract suspend fun onProcess(context: Context, item: Input): Output
 
   // Forces all SDK users to consciously handle batch events rather than optionally relying on listeners.
   // This can prevent subtle bugs where batch-level behavior is forgotten.
   // Subclasses can optionally delegate to listener (client app) by simply calling listener.onBatchComplete in implementation
-  protected abstract suspend fun onBatchComplete(context: Context, batch: List<TOutput>)
+  protected abstract suspend fun onBatchComplete(context: Context, batch: List<Output>)
 
 }
 
@@ -252,7 +252,7 @@ abstract class BaseModel<InputTensor> : AutoCloseable {
     protected abstract val loader: IModelLoader<*> // hidden implementation detail
 
     abstract suspend fun loadModel()
-    abstract fun isLoaded(): Boolean // optional, may be removed
+    abstract fun isLoaded(): Boolean
     abstract fun run(inputs: Map<String, InputTensor>): Map<String, Any>
 }
 
