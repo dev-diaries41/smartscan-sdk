@@ -6,7 +6,6 @@ import android.content.Context
 import android.provider.MediaStore
 import com.fpf.smartscansdk.core.utils.getBitmapFromUri
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
-import com.fpf.smartscansdk.core.ml.embeddings.IEmbeddingStore
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipImageEmbedder
 import com.fpf.smartscansdk.core.processors.BatchProcessor
@@ -32,7 +31,8 @@ class ImageIndexer(
         const val INDEX_FILENAME = "image_index.bin"
     }
 
-    private val store = FileEmbeddingStore(application.filesDir, INDEX_FILENAME, ClipConfig.CLIP_EMBEDDING_LENGTH)
+    // Cache not needed when indexing. This prevents unnecessary memory usage
+    private val store = FileEmbeddingStore(application.filesDir, INDEX_FILENAME, ClipConfig.CLIP_EMBEDDING_LENGTH, useCache = false)
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
         store.add(batch)

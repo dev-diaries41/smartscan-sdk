@@ -36,7 +36,8 @@ class VideoIndexer(
         const val INDEX_FILENAME = "video_index.bin"
     }
 
-    private val store = FileEmbeddingStore(application.filesDir, INDEX_FILENAME, CLIP_EMBEDDING_LENGTH)
+    // Cache not needed when indexing. This prevents unnecessary memory usage
+    private val store = FileEmbeddingStore(application.filesDir, INDEX_FILENAME, CLIP_EMBEDDING_LENGTH, useCache = false)
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
         store.add(batch)
