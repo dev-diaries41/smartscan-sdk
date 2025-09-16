@@ -18,7 +18,9 @@ class FileEmbeddingStore(
     dir: File,
     filename: String,
     private val embeddingLength: Int,
-):
+    val useCache: Boolean = true,
+
+    ):
     IEmbeddingStore {
 
     companion object {
@@ -30,14 +32,14 @@ class FileEmbeddingStore(
 
     val exists: Boolean get() = file.exists()
 
-    val isLoaded: Boolean
+    val isCached: Boolean
         get() = cache != null
 
 
     // prevent OOM in FileEmbeddingStore.save() by batching writes
     suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO) {
         if (embeddingsList.isEmpty()) return@withContext
-        cache = embeddingsList
+        if(useCache){cache = embeddingsList}
 
         FileOutputStream(file).channel.use { channel ->
             val header = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
@@ -94,7 +96,7 @@ class FileEmbeddingStore(
                 buffer.position(buffer.position() + embeddingLength * 4)
                 list.add(Embedding(id, date, floats))
             }
-            cache = list
+            if(useCache){cache = list}
             list
         }
     }
@@ -153,7 +155,7 @@ class FileEmbeddingStore(
                 }
             }
             channel.force(false)
-            cache = (cache ?: emptyList()) + newEmbeddings
+            if(useCache){cache = (cache ?: emptyList()) + newEmbeddings}
         }
     }
 
