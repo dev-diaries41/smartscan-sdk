@@ -20,7 +20,7 @@ class FewShotClassifierTest {
             prototypeEmbedding("2", 200, floatArrayOf(0.2f, 0.1f, 0.3f, 0.4f))
         )
 
-        val result = classifyImproved(embedding, prototypes, threshold, minMargin)
+        val result = classify(embedding, prototypes, threshold, minMargin)
         Assertions.assertTrue(result is ClassificationResult.Failure)
         Assertions.assertEquals(ClassificationError.THRESHOLD, (result as ClassificationResult.Failure).error)
     }
@@ -33,7 +33,7 @@ class FewShotClassifierTest {
             prototypeEmbedding("2", 200, floatArrayOf(0.99f, 0.99f, 0.99f, 0.99f)),
         )
 
-        val result = classifyImproved(embedding, prototypes, threshold, minMargin)
+        val result = classify(embedding, prototypes, threshold, minMargin)
         Assertions.assertTrue(result is ClassificationResult.Failure)
         Assertions.assertEquals(ClassificationError.CONFIDENCE_MARGIN, (result as ClassificationResult.Failure).error)
     }
@@ -46,7 +46,7 @@ class FewShotClassifierTest {
             prototypeEmbedding("2", 200, floatArrayOf(0f, 1f, 0f, 0f))
         )
 
-        val result = classifyImproved(embedding, prototypes, threshold, minMargin)
+        val result = classify(embedding, prototypes, threshold, minMargin)
         Assertions.assertTrue(result is ClassificationResult.Success)
         val success = result as ClassificationResult.Success
         Assertions.assertTrue(success.similarity >= threshold)
@@ -62,7 +62,7 @@ class FewShotClassifierTest {
             prototypeEmbedding("1", 100, floatArrayOf(1f, 0f, 0f, 0f)),
         )
 
-        val result = classifyImproved(embedding, prototypes, threshold, minMargin)
+        val result = classify(embedding, prototypes, threshold, minMargin)
         Assertions.assertTrue(result is ClassificationResult.Failure)
         Assertions.assertTrue((result as ClassificationResult.Failure).error == ClassificationError.MINIMUM_CLASS_SIZE)
     }
