@@ -36,8 +36,8 @@ class FileEmbeddingStoreTest {
 
     private val embeddingLength = 4
 
-    private fun createStore(fileName: String = "embeddings.bin") =
-        FileEmbeddingStore(tempDir, fileName, embeddingLength)
+    private fun createStore(fileName: String = "embeddings.bin", useCache: Boolean = true) =
+        FileEmbeddingStore(tempDir, fileName, embeddingLength, useCache = useCache)
 
     private fun embedding(id: Long, date: Long, values: FloatArray) =
         Embedding(id, date, values)
@@ -56,7 +56,11 @@ class FileEmbeddingStoreTest {
         Assertions.assertEquals(2, loaded.size)
         Assertions.assertEquals(embeddings[0].id, loaded[0].id)
         Assertions.assertEquals(embeddings[1].embeddings.toList(), loaded[1].embeddings.toList())
-        Assertions.assertTrue(store.isLoaded)
+        if(store.useCache){
+            Assertions.assertTrue(store.isCached)
+        }else{
+            Assertions.assertFalse(store.isCached)
+        }
     }
 
     @Test
@@ -98,10 +102,32 @@ class FileEmbeddingStoreTest {
         store.save(embeddings)
 
         val firstLoad = store.getAll()
-        Assertions.assertTrue(store.isLoaded)
+        if(store.useCache){
+            Assertions.assertTrue(store.isCached)
+        }else{
+            Assertions.assertFalse(store.isCached)
+        }
 
         store.clear()
-        Assertions.assertFalse(store.isLoaded)
+        Assertions.assertFalse(store.isCached)
+
+        val secondLoad = store.getAll()
+        assertTrue(firstLoad.zip(secondLoad).all { (a, b) ->
+            a.id == b.id && a.date == b.date && a.embeddings.contentEquals(b.embeddings)
+        })
+    }
+
+    @Test
+    fun `never cache if useCache false`() = runTest {
+        val store = createStore(useCache = false)
+        val embeddings = listOf(embedding(1, 100, FloatArray(embeddingLength) { 0.1f }))
+        store.save(embeddings)
+
+        val firstLoad = store.getAll()
+        Assertions.assertFalse(store.isCached)
+
+        store.clear()
+        Assertions.assertFalse(store.isCached)
 
         val secondLoad = store.getAll()
         assertTrue(firstLoad.zip(secondLoad).all { (a, b) ->
