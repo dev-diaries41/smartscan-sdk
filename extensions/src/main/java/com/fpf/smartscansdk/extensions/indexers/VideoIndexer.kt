@@ -51,7 +51,7 @@ class VideoIndexer(
         if(frameBitmaps == null) throw IllegalStateException("Invalid frames")
 
         val rawEmbeddings = embedder.embedBatch(context.applicationContext, frameBitmaps)
-        val embedding: FloatArray = generatePrototypeEmbedding(context, rawEmbeddings)
+        val embedding: FloatArray = generatePrototypeEmbedding(rawEmbeddings)
 
         return Embedding(
             id = id,

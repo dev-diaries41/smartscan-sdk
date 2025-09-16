@@ -6,8 +6,7 @@ import kotlinx.coroutines.withContext
 import kotlin.math.sqrt
 
 
-infix fun FloatArray.dot(other: FloatArray) =
-    foldIndexed(0.0) { i, acc, cur -> acc + cur * other[i] }.toFloat()
+infix fun FloatArray.dot(other: FloatArray) = foldIndexed(0.0) { i, acc, cur -> acc + cur * other[i] }.toFloat()
 
 fun normalizeL2(inputArray: FloatArray): FloatArray {
     var norm = 0.0f
@@ -28,7 +27,7 @@ fun getTopN(similarities: List<Float>, n: Int, threshold: Float = 0f): List<Int>
         .take(n)
 }
 
-suspend fun generatePrototypeEmbedding(context: Context, rawEmbeddings: List<FloatArray>): FloatArray =
+suspend fun generatePrototypeEmbedding(rawEmbeddings: List<FloatArray>): FloatArray =
     withContext(Dispatchers.Default) {
         if (rawEmbeddings.isEmpty()) throw IllegalStateException("Missing embeddings")
         val embeddingLength = rawEmbeddings[0].size
