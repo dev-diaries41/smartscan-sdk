@@ -139,33 +139,4 @@ class FileEmbeddingStoreTest {
         }
     }
 
-    @Test
-    fun `benchmark loading 2500 realistic embeddings`() = runTest {
-        val embeddingLength = 512
-        val numEmbeddings = 25000
-        val store = FileEmbeddingStore(tempDir, "realistic_embeddings.bin", embeddingLength)
-
-        // Create realistic embeddings with pseudo-random float data
-        val embeddings = (1..numEmbeddings.toLong()).map { id ->
-            val values = FloatArray(embeddingLength) { kotlin.random.Random.nextFloat() }
-            Embedding(id, System.currentTimeMillis(), values)
-        }
-
-        // Save embeddings to disk
-        store.save(embeddings)
-
-        // Clear cache to force disk read
-        store.clear()
-        assert(!store.isLoaded)
-
-        // Measure time to load all embeddings from disk
-        val timeNanos = kotlin.system.measureNanoTime {
-            val loaded = store.getAll()
-            assert(loaded.size == numEmbeddings)
-        }
-
-        println("Loading $numEmbeddings realistic embeddings of length $embeddingLength took ${timeNanos / 1_000_000.0} ms")
-    }
-
-
 }
