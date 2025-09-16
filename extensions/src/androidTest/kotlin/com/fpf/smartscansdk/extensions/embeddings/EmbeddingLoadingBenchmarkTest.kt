@@ -13,9 +13,15 @@ import org.junit.runner.RunWith
 import java.io.File
 import kotlin.random.Random
 import kotlin.system.measureNanoTime
+import android.util.Log
 
 @RunWith(AndroidJUnit4::class)
-class RoomEmbeddingStoreBenchmarkTest {
+class EmbeddingLoadingBenchmarkTest {
+
+    companion object {
+        const val BENCHMARK_PATH = "embedding_benchmark_results.txt"
+        const val TAG = "EmbeddingLoadingBenchmarkTest"
+    }
 
     private val embeddingLength = 512
     private val numEmbeddings = 5000
@@ -29,31 +35,26 @@ class RoomEmbeddingStoreBenchmarkTest {
     fun benchmarkRoomVsFileWithSameEmbeddings() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Application>()
 
-        // 1️⃣ Generate embeddings once
         val embeddings = (1..numEmbeddings.toLong()).map { createEmbedding(it) }
 
-        // -------------------
-        // 2️⃣ Room benchmark
-        // -------------------
         val db = ImageEmbeddingDatabase.getDatabase(context)
         val dao = db.imageEmbeddingDao()
+        dao.deleteAll() // force reload
 
-        // Insert embeddings
         embeddings.forEach { dao.insertImageEmbedding(it) }
 
         val roomTime = measureNanoTime {
             val loadedRoom = dao.getAllEmbeddingsSync()
             assertEquals(numEmbeddings, loadedRoom.size)
         }
-        println("Benchmark for Room approach: Number of Embeddings: $numEmbeddings  Time taken: ${roomTime / 1_000_000.0} ms")
+        val roomTimeMs = roomTime / 1_000_000.0
+        logBenchmarkResult(numEmbeddings, roomTimeMs, "Room")
 
-        // -------------------
-        // 3️⃣ File benchmark
-        // -------------------
+
+
         val tempDir = File(context.cacheDir, "tempEmbeddings").apply { mkdirs() }
         val store = FileEmbeddingStore(tempDir, "embeddings.bin", embeddingLength)
 
-        // Save embeddings
         store.save(embeddings.map { it.toEmbedding() })
         store.clear() // force reload
 
@@ -61,7 +62,12 @@ class RoomEmbeddingStoreBenchmarkTest {
             val loadedFile = store.getAll()
             assertEquals(numEmbeddings, loadedFile.size)
         }
-        println("Benchmark for File approach: Number of Embeddings: $numEmbeddings  Time taken: ${fileTime / 1_000_000.0} ms")
+
+        val fileTimeMs = fileTime / 1_000_000.0
+        logBenchmarkResult(numEmbeddings, fileTimeMs, "File")
     }
 
+    private fun logBenchmarkResult( size: Int, time: Double, type: String) {
+        Log.d(TAG,  "$type: $size embeddings, Time: $time ms")
+    }
 }
