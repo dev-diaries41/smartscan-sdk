@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.net.Uri
 import androidx.core.net.toUri
+import com.fpf.smartscansdk.core.ml.embeddings.ClassificationResult
 import com.fpf.smartscansdk.core.ml.embeddings.PrototypeEmbedding
 import com.fpf.smartscansdk.core.ml.embeddings.classify
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipImageEmbedder
@@ -35,12 +36,19 @@ class Organiser(
         listener?.onBatchComplete(context, batch)
     }
 
-    // classId (destinationUriStr) and item(source uri) both required to move files in batches
     override suspend fun onProcess(context: Context, item: Uri): OrganiserResult {
         val bitmap = getBitmapFromUri(application, item, ClipConfig.IMAGE_SIZE_X)
         val embedding = embedder.embed(bitmap)
-        val classId =  classify(embedding, prototypeList)
-        return OrganiserResult( source = item, destination = classId?.toUri(), scanId=scanId)
+        val result =  classify(embedding, prototypeList)
+        return when(result){
+            is ClassificationResult.Success -> {
+                OrganiserResult( source = item, destination = result.classId.toUri(), scanId=scanId)
+            }
+            is ClassificationResult.Failure -> {
+                OrganiserResult( source = item, destination = null, scanId=scanId)
+            }
+
+        }
     }
 }
 
