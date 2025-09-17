@@ -133,12 +133,14 @@ The SDK only provides a file based implementation of `IEmbeddingStore`, `FileEmb
 | 40,000              | 83,496 ms      | 82 ms          |
 
 
-<img src="./benchmarks/smartscan-load-benchmark.png" alt="smartscan-load-benchmark" style="width:80%">
+![SmartScan Load Benchmark](./benchmarks/smartscan-load-benchmark.png)
 
 **Observations:**
 
 * Room scales linearly and is much slower due to row-by-row deserialization.
 * File-based memory-mapped loading is significantly faster and scales better.
+
+___
 
 ## **Gradle / Kotlin Setup Notes**
 
