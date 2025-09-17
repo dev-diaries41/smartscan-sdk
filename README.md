@@ -8,7 +8,6 @@
 
   + [1. Install Core Module](#1-install-core-module)
   + [2. Install Extensions Module (Optional)](#2-install-extensions-module-optional)
-* [Benchmark Summary](#benchmark-summary)
 * [Design Choices](#design-choices)
 
   + [Core and Extensions](#core-and-extensions)
@@ -32,6 +31,8 @@ SmartScanSdk is a modular Android SDK that powers the **SmartScan app**. It prov
 The SDK is **extensible**, allowing developers to add ML models or features without bloating the core runtime.
 
 **Long-term vision:** SmartScanSdk was designed with the goal of becoming a **C++ cross-platform SDK** for **search and classification**, capable of running both **offline on edge devices** and in **bulk cloud environments**.
+
+Will add full docs soon.
 
 > **Note:** Because of its long-term cross-platform goals, some features may be experimental (extensions). However, the SDK is considered stable for production use, as it is actively used in the SmartScan app.
 
@@ -120,7 +121,6 @@ The SDK only provides a file based implementation of `IEmbeddingStore`, `FileEmb
 | 640                 | 1,237.5 ms    | 32 ms          |
 | 2,450               | 2,737.2 ms    | 135 ms         |
 
----
 
 **Instrumented Test Benchmarks**
 
