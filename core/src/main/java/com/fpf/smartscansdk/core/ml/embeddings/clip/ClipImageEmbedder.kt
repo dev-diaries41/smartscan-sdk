@@ -1,6 +1,5 @@
 package com.fpf.smartscansdk.core.ml.embeddings.clip
 
-import ai.onnxruntime.OnnxTensor
 import android.app.Application
 import android.content.Context
 import android.content.res.Resources
@@ -17,9 +16,10 @@ import com.fpf.smartscansdk.core.ml.models.FilePath
 import com.fpf.smartscansdk.core.ml.models.ModelSource
 import com.fpf.smartscansdk.core.ml.models.ResourceId
 import com.fpf.smartscansdk.core.ml.models.ResourceOnnxLoader
+import com.fpf.smartscansdk.core.ml.models.TensorData
 import com.fpf.smartscansdk.core.processors.BatchProcessor
-import com.fpf.smartscansdk.core.processors.IProcessorListener
 import kotlinx.coroutines.*
+import java.nio.FloatBuffer
 
 // Using ModelSource enables using with bundle model or local model which has been downloaded
 class ClipImageEmbedder(
@@ -39,19 +39,13 @@ class ClipImageEmbedder(
     fun isInitialized() = model.isLoaded()
 
     override suspend fun embed(bitmap: Bitmap): FloatArray = withContext(Dispatchers.Default) {
-        if(!isInitialized()) throw IllegalStateException("Model not initialized")
+        if (!isInitialized()) throw IllegalStateException("Model not initialized")
 
-        val inputShape = longArrayOf(DIM_BATCH_SIZE.toLong(), DIM_PIXEL_SIZE.toLong(),
-            IMAGE_SIZE_X.toLong(), IMAGE_SIZE_Y.toLong()
-        )
-        val imgData = preProcess(bitmap)
-
-        OnnxTensor.createTensor(model.getEnv(), imgData, inputShape).use { inputTensor ->
-            val inputName = model.getInputNames()?.firstOrNull()
-                ?: throw IllegalStateException("Model inputs not available")
-            val output = model.run(mapOf(inputName to inputTensor))
-            normalizeL2((output.values.first() as Array<FloatArray>)[0])
-        }
+        val inputShape = longArrayOf(DIM_BATCH_SIZE.toLong(), DIM_PIXEL_SIZE.toLong(), IMAGE_SIZE_X.toLong(), IMAGE_SIZE_Y.toLong())
+        val imgData: FloatBuffer = preProcess(bitmap)
+        val inputName = model.getInputNames()?.firstOrNull() ?: throw IllegalStateException("Model inputs not available")
+        val output = model.run(mapOf(inputName to TensorData.FloatBufferTensor(imgData, inputShape)))
+        normalizeL2((output.values.first() as Array<FloatArray>)[0])
     }
 
     suspend fun embedBatch(context: Context, bitmaps: List<Bitmap>): List<FloatArray> {

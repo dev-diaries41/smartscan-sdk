@@ -1,6 +1,5 @@
 package com.fpf.smartscansdk.core.ml.embeddings.clip
 
-import ai.onnxruntime.OnnxTensor
 import android.app.Application
 import android.content.Context
 import android.content.res.Resources
@@ -14,8 +13,8 @@ import com.fpf.smartscansdk.core.ml.models.FilePath
 import com.fpf.smartscansdk.core.ml.models.ModelSource
 import com.fpf.smartscansdk.core.ml.models.ResourceId
 import com.fpf.smartscansdk.core.ml.models.ResourceOnnxLoader
+import com.fpf.smartscansdk.core.ml.models.TensorData
 import com.fpf.smartscansdk.core.processors.BatchProcessor
-import com.fpf.smartscansdk.core.processors.IProcessorListener
 import kotlinx.coroutines.*
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -48,7 +47,7 @@ class ClipTextEmbedder(
     fun isInitialized() = model.isLoaded()
 
     override suspend fun embed(text: String): FloatArray = withContext(Dispatchers.Default) {
-        if(!isInitialized()) throw IllegalStateException("Model not initialized")
+        if (!isInitialized()) throw IllegalStateException("Model not initialized")
 
         val clean = Regex("[^A-Za-z0-9 ]").replace(text, "").lowercase()
         var tokens = mutableListOf(tokenBOS) + tokenizer.encode(clean) + tokenEOS
@@ -59,13 +58,9 @@ class ClipTextEmbedder(
             rewind()
         }
         val inputShape = longArrayOf(1, 77)
-
-        OnnxTensor.createTensor(model.getEnv(), inputIds, inputShape).use { inputTensor ->
-            val inputName = model.getInputNames()?.firstOrNull()
-                ?: throw IllegalStateException("Model inputs not available")
-            val output = model.run(mapOf(inputName to inputTensor))
-            normalizeL2((output.values.first() as Array<FloatArray>)[0])
-        }
+        val inputName = model.getInputNames()?.firstOrNull() ?: throw IllegalStateException("Model inputs not available")
+        val output = model.run(mapOf(inputName to TensorData.LongBufferTensor(inputIds, inputShape)))
+        normalizeL2((output.values.first() as Array<FloatArray>)[0])
     }
 
     suspend fun embedBatch(context: Context, texts: List<String>): List<FloatArray> {

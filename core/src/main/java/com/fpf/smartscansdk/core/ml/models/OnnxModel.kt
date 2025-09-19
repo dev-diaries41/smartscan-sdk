@@ -1,17 +1,25 @@
 package com.fpf.smartscansdk.core.ml.models
 
-import ai.onnxruntime.OnnxTensorLike
+import ai.onnxruntime.OnnxJavaType
+import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import java.nio.ByteBuffer
+import java.nio.DoubleBuffer
+import java.nio.FloatBuffer
+import java.nio.IntBuffer
+import java.nio.LongBuffer
+import java.nio.ShortBuffer
 
-class OnnxModel(override  val loader: IModelLoader<ByteArray>) : BaseModel<OnnxTensorLike>() {
+
+class OnnxModel(override val loader: IModelLoader<ByteArray>) : BaseModel<TensorData>() {
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
     private var session: OrtSession? = null
 
-    override suspend fun loadModel()  = coroutineScope {
+    override suspend fun loadModel() = coroutineScope {
         withContext(Dispatchers.IO) {
             val bytes = loader.load()
             session = env.createSession(bytes)
@@ -20,10 +28,36 @@ class OnnxModel(override  val loader: IModelLoader<ByteArray>) : BaseModel<OnnxT
 
     override fun isLoaded(): Boolean = session != null
 
-    override fun run(inputs: Map<String, OnnxTensorLike>): Map<String, Any> {
+    override fun run(inputs: Map<String, TensorData>): Map<String, Any> {
         val s = session ?: throw IllegalStateException("Model not loaded")
-        s.run(inputs).use { results ->
-            return results.associate { it.key to it.value.value }
+        val createdTensors: Map<String, OnnxTensor> = inputs.mapValues { (_, tensorData) ->
+            createOnnxTensor(tensorData)
+        }
+
+        try {
+            s.run(createdTensors).use { results ->
+                return results.associate { it.key to it.value.value }
+            }
+        } finally {
+            createdTensors.values.forEach { try { it.close() } catch (ignored: Exception) {} }
+        }
+    }
+
+    private fun createOnnxTensor(tensorData: TensorData): OnnxTensor {
+        return when (tensorData) {
+            is TensorData.FloatBufferTensor -> OnnxTensor.createTensor(env, tensorData.data, tensorData.shape)
+            is TensorData.IntBufferTensor -> OnnxTensor.createTensor(env, tensorData.data, tensorData.shape)
+            is TensorData.LongBufferTensor -> OnnxTensor.createTensor(env, tensorData.data, tensorData.shape)
+            is TensorData.DoubleBufferTensor -> OnnxTensor.createTensor(env, tensorData.data, tensorData.shape)
+            is TensorData.ShortBufferTensor -> {
+                val type = tensorData.type
+                if (type != null) {
+                    OnnxTensor.createTensor(env, tensorData.data, tensorData.shape, type)
+                } else {
+                    OnnxTensor.createTensor(env, tensorData.data, tensorData.shape)
+                }
+            }
+            is TensorData.ByteBufferTensor -> OnnxTensor.createTensor(env, tensorData.data, tensorData.shape, tensorData.type)
         }
     }
 
@@ -36,4 +70,3 @@ class OnnxModel(override  val loader: IModelLoader<ByteArray>) : BaseModel<OnnxT
         session = null
     }
 }
-
