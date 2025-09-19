@@ -27,6 +27,7 @@ SmartScanSdk is a modular Android SDK that powers the **SmartScan app**. It prov
 * Image & video processing
 * On-device ML inference
 * Semantic media indexing and search
+* Few shot classification
 
 The SDK is **extensible**, allowing developers to add ML models or features without bloating the core runtime.
 
@@ -34,10 +35,7 @@ The SDK is **extensible**, allowing developers to add ML models or features with
 
 Will add full docs soon.
 
-> **Note:** Because of its long-term cross-platform goals, some features may be experimental (extensions). However, the SDK is considered stable for production use, as it is actively used in the SmartScan app.
-
----
-
+> **Note:** Because of its long-term cross-platform goals, some features may be experimental (extensions). However, the SDK is generally considered stable, as it is actively used in the SmartScan app, aswell as others``.
 
 ---
 
