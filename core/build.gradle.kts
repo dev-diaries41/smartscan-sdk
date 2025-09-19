@@ -63,11 +63,10 @@ java {
 }
 
 dependencies {
-    // Doc file handling
     implementation(libs.androidx.documentfile)
+    implementation(libs.onnxruntime.android)
 
     // Expose core-ktx and onnxruntime to consumers of core or extensions
-    api(libs.onnxruntime.android)
     api(libs.androidx.core.ktx)
 
     // JVM unit tests
