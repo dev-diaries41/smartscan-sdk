@@ -1,19 +1,11 @@
 package com.fpf.smartscansdk.core.ml.models
 
-import ai.onnxruntime.OnnxJavaType
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import java.nio.ByteBuffer
-import java.nio.DoubleBuffer
-import java.nio.FloatBuffer
-import java.nio.IntBuffer
-import java.nio.LongBuffer
-import java.nio.ShortBuffer
-
 
 class OnnxModel(override val loader: IModelLoader<ByteArray>) : BaseModel<TensorData>() {
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
