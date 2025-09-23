@@ -65,8 +65,7 @@ dependencies {
     // Pull in core transitively so consumers only need extensions
     api(project(":core"))
 
-    // Add any extension-specific dependencies here
-    // Tests
+    // JVM unit tests
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
@@ -80,11 +79,10 @@ dependencies {
     androidTestImplementation("io.mockk:mockk-android:1.14.5")
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
-    // room tests
     androidTestImplementation("androidx.room:room-runtime:2.7.2")
     androidTestImplementation("androidx.room:room-ktx:2.7.2")
     androidTestImplementation("androidx.room:room-testing:2.7.2")
-    ksp("androidx.room:room-compiler:2.7.2") // only for annotation processing
+    ksp("androidx.room:room-compiler:2.7.2")
 
 }
 
