@@ -19,9 +19,12 @@ class Organiser(
     private val embedder: ClipImageEmbedder,
     private val prototypeList: List<PrototypeEmbedding>,
     private val scanId: Int,
+    private val threshold: Float = 0.4f,
+    private val confidenceMargin: Float = 0.04f,
     listener: IProcessorListener<Uri, OrganiserResult>,
     options: ProcessOptions = ProcessOptions(),
     ): BatchProcessor<Uri, OrganiserResult>(application, listener, options) {
+
     companion object {
         private const val TAG = "Organiser"
         const val PREF_KEY_LAST_USED_CLASSIFICATION_DIRS = "last_used_destinations"
@@ -39,7 +42,7 @@ class Organiser(
     override suspend fun onProcess(context: Context, item: Uri): OrganiserResult {
         val bitmap = getBitmapFromUri(application, item, ClipConfig.IMAGE_SIZE_X)
         val embedding = embedder.embed(bitmap)
-        val result =  classify(embedding, prototypeList)
+        val result =  classify(embedding, prototypeList, threshold=threshold, confidenceMargin=confidenceMargin)
         return when(result){
             is ClassificationResult.Success -> {
                 OrganiserResult( source = item, destination = result.classId.toUri(), scanId=scanId)
