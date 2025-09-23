@@ -88,12 +88,23 @@ dependencies {
 
 }
 
+val gitVersion: String by lazy {
+    runCatching {
+        val proc = ProcessBuilder("git", "describe", "--tags", "--abbrev=0")
+            .redirectErrorStream(true)
+            .start()
+        val out = proc.inputStream.bufferedReader().use { it.readText() }.trim()
+        if (proc.waitFor() == 0) out.removePrefix("v") else throw RuntimeException("git failed")
+    }.getOrDefault("1.0.0")
+}
+
+
 publishing {
     publications {
         register<MavenPublication>("release") {
             groupId = "com.github.dev-diaries41"
             artifactId = "smartscan-${project.name}"
-            version = project.findProperty("publishVersion")?.toString() ?: "1.0.0"
+            version = gitVersion
 
             afterEvaluate {
                 from(components["release"])
