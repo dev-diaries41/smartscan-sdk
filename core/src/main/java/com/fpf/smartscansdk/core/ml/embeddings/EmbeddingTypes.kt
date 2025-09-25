@@ -18,8 +18,11 @@ data class PrototypeEmbedding(
 
 
 interface IEmbeddingStore {
+    val isCached: Boolean
+    val exists: Boolean
     suspend fun add(newEmbeddings: List<Embedding>)
     suspend fun remove(ids: List<Long>)
+    suspend fun getAll(): List<Embedding> // getAll used instead of get to make clear that loading full index in memory is required
     fun clear()
 }
 
