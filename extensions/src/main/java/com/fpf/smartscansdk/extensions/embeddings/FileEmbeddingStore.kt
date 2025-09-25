@@ -19,7 +19,6 @@ class FileEmbeddingStore(
     filename: String,
     private val embeddingLength: Int,
     val useCache: Boolean = true,
-
     ):
     IEmbeddingStore {
 
@@ -30,14 +29,14 @@ class FileEmbeddingStore(
     private val file = File(dir, filename)
     private var cache: List<Embedding>? = null
 
-    val exists: Boolean get() = file.exists()
+    override val exists: Boolean get() = file.exists()
 
-    val isCached: Boolean
+    override val isCached: Boolean
         get() = cache != null
 
 
     // prevent OOM in FileEmbeddingStore.save() by batching writes
-    suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO) {
+    private suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO) {
         if (embeddingsList.isEmpty()) return@withContext
         if(useCache){cache = embeddingsList}
 
@@ -77,7 +76,7 @@ class FileEmbeddingStore(
     }
 
     // This explicitly makes clear the design constraints that requires the full index to be loaded in memory
-    suspend fun getAll(): List<Embedding> = withContext(Dispatchers.IO){
+    override suspend fun getAll(): List<Embedding> = withContext(Dispatchers.IO){
         cache?.let { return@withContext it };
 
         FileInputStream(file).channel.use { ch ->
