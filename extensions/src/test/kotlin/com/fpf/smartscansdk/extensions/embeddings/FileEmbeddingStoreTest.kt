@@ -43,14 +43,14 @@ class FileEmbeddingStoreTest {
         Embedding(id, date, values)
 
     @Test
-    fun `save and load embeddings round trip`() = runTest {
+    fun `add and load embeddings round trip`() = runTest {
         val store = createStore()
         val embeddings = listOf(
             embedding(1, 100, floatArrayOf(0.1f, 0.2f, 0.3f, 0.4f)),
             embedding(2, 200, floatArrayOf(0.5f, 0.6f, 0.7f, 0.8f))
         )
 
-        store.save(embeddings)
+        store.add(embeddings)
         val loaded = store.getAll()
 
         Assertions.assertEquals(2, loaded.size)
@@ -69,7 +69,7 @@ class FileEmbeddingStoreTest {
         val first = listOf(embedding(1, 100, floatArrayOf(1f, 2f, 3f, 4f)))
         val second = listOf(embedding(2, 200, floatArrayOf(5f, 6f, 7f, 8f)))
 
-        store.save(first)
+        store.add(first)
         store.add(second)
 
         val all = store.getAll()
@@ -87,7 +87,7 @@ class FileEmbeddingStoreTest {
             embedding(3L, 300, floatArrayOf(3f, 3f, 3f, 3f))
         )
 
-        store.save(embeddings)
+        store.add(embeddings)
         store.remove(listOf(2L))
 
         val remaining = store.getAll()
@@ -99,7 +99,7 @@ class FileEmbeddingStoreTest {
     fun `cache is cleared and reloads`() = runTest {
         val store = createStore()
         val embeddings = listOf(embedding(1, 100, FloatArray(embeddingLength) { 0.1f }))
-        store.save(embeddings)
+        store.add(embeddings)
 
         val firstLoad = store.getAll()
         if(store.useCache){
@@ -121,7 +121,7 @@ class FileEmbeddingStoreTest {
     fun `never cache if useCache false`() = runTest {
         val store = createStore(useCache = false)
         val embeddings = listOf(embedding(1, 100, FloatArray(embeddingLength) { 0.1f }))
-        store.save(embeddings)
+        store.add(embeddings)
 
         val firstLoad = store.getAll()
         Assertions.assertFalse(store.isCached)
@@ -136,12 +136,12 @@ class FileEmbeddingStoreTest {
     }
 
     @Test
-    fun `saving embedding with wrong length throws`() = runTest {
+    fun `adding embedding with wrong length throws`() = runTest {
         val store = createStore()
         val bad = listOf(embedding(1, 100, floatArrayOf(1f, 2f))) // too short
 
         assertFailsWith<IllegalArgumentException> {
-            store.save(bad)
+            store.add(bad)
         }
     }
 
@@ -149,7 +149,7 @@ class FileEmbeddingStoreTest {
     fun `corrupt header causes IOException`() = runTest {
         val store = createStore()
         val embeddings = listOf(embedding(1, 100, FloatArray(embeddingLength) { 1f }))
-        store.save(embeddings)
+        store.add(embeddings)
 
         // corrupt first 4 bytes (count header)
         RandomAccessFile(File(tempDir, "embeddings.bin"), "rw").use { raf ->
