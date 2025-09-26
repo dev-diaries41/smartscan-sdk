@@ -114,29 +114,25 @@ The SDK only provides a file based implementation of `IEmbeddingStore`, `FileEmb
 
 **Real-Life Test Results**
 
-| Number of Embeddings | Room Load Time | File Load Time |
-|---------------------|----------------|----------------|
-| 640                 | 1,237.5 ms    | 32 ms          |
-| 2,450               | 2,737.2 ms    | 135 ms         |
+| Embeddings | Room Time (ms) | File Time (ms) |
+|------------|----------------|----------------|
+| 640        | 1,237.5        | 32.0           |
+| 2,450      | 2,737.2        | 135.0          |
 
 
 **Instrumented Test Benchmarks**
 
-| Number of Embeddings | Room Load Time | File Load Time |
-|---------------------|----------------|----------------|
-| 2,500               | 2,539 ms       | 20 ms          |
-| 10,000              | 7,014 ms       | 49 ms          |
-| 20,000              | 21,729 ms      | 75 ms          |
-| 30,000              | 48,547 ms      | 112 ms         |
-| 40,000              | 83,496 ms      | 82 ms          |
-
+| Embeddings | Room Time (ms) | File Time (ms) |
+|------------|----------------|----------------|
+| 2,500      | 5,337.50       | 72.05          |
+| 5,000      | 8,095.87       | 126.63         |
+| 10,000     | 16,420.67      | 236.51         |
+| 20,000     | 36,622.81      | 605.51         |
+| 40,000     | 89,363.28      | 939.50         |
 
 ![SmartScan Load Benchmark](./benchmarks/smartscan-load-benchmark.png)
 
-**Observations:**
-
-* Room scales linearly and is much slower due to row-by-row deserialization.
-* File-based memory-mapped loading is significantly faster and scales better.
+File-based memory-mapped loading is significantly faster and scales better.
 
 ___
 
