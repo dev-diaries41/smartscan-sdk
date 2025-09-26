@@ -1,6 +1,7 @@
 package com.fpf.smartscansdk.core.ml.embeddings.clip
 
 import ai.onnxruntime.OnnxTensor
+import ai.onnxruntime.OnnxTensorLike
 import ai.onnxruntime.OrtEnvironment
 import android.content.Context
 import android.content.res.Resources
@@ -10,6 +11,7 @@ import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.core.ml.models.OnnxModel
 import com.fpf.smartscansdk.core.ml.models.ResourceId
+import com.fpf.smartscansdk.core.ml.models.TensorData
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -77,7 +79,7 @@ class ClipImageEmbedderInstrumentedTest {
 
         // prepare fake output: Array<FloatArray> with length 512
         val raw = Array(1) { FloatArray(embedder.embeddingDim) { 1.0f } }
-        every { mockModel.run(any<Map<String, ai.onnxruntime.OnnxTensorLike>>()) } returns mapOf("out" to raw)
+        every { mockModel.run(any<Map<String, TensorData>>()) } returns mapOf("out" to raw)
 
         // mock tensor creation and closing; specify types so mockk can infer overload
         val mockTensor = mockk<OnnxTensor>(relaxed = true)
@@ -109,7 +111,7 @@ class ClipImageEmbedderInstrumentedTest {
         every { mockModel.getEnv() } returns mockk<OrtEnvironment>()
 
         val raw = Array(1) { FloatArray(embedder.embeddingDim) { 1.0f } }
-        every { mockModel.run(any<Map<String, ai.onnxruntime.OnnxTensorLike>>()) } returns mapOf("out" to raw)
+        every { mockModel.run(any<Map<String, TensorData>>()) } returns mapOf("out" to raw)
 
         val mockTensor = mockk<OnnxTensor>(relaxed = true)
         every { OnnxTensor.createTensor(any<OrtEnvironment>(), any<java.nio.FloatBuffer>(), any<LongArray>()) } returns mockTensor
