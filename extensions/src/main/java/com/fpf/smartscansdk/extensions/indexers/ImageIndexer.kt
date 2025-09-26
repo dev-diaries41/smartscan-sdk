@@ -6,12 +6,12 @@ import android.content.Context
 import android.provider.MediaStore
 import com.fpf.smartscansdk.core.utils.getBitmapFromUri
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
+import com.fpf.smartscansdk.core.ml.embeddings.IEmbeddingStore
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipImageEmbedder
 import com.fpf.smartscansdk.core.processors.BatchProcessor
 import com.fpf.smartscansdk.core.processors.IProcessorListener
 import com.fpf.smartscansdk.core.processors.ProcessOptions
-import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
@@ -25,14 +25,12 @@ class ImageIndexer(
     application: Application,
     listener: IProcessorListener<Long, Embedding>? = null,
     options: ProcessOptions = ProcessOptions(),
+    private val store: IEmbeddingStore,
     ): BatchProcessor<Long, Embedding>(application, listener, options){
 
     companion object {
         const val INDEX_FILENAME = "image_index.bin"
     }
-
-    // Cache not needed when indexing. This prevents unnecessary memory usage
-    private val store = FileEmbeddingStore(application.filesDir, INDEX_FILENAME, ClipConfig.CLIP_EMBEDDING_LENGTH, useCache = false)
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
         store.add(batch)

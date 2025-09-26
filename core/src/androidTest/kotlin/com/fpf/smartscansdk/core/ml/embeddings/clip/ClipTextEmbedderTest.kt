@@ -7,6 +7,7 @@ import android.content.res.Resources
 import androidx.test.core.app.ApplicationProvider
 import com.fpf.smartscansdk.core.ml.models.OnnxModel
 import com.fpf.smartscansdk.core.ml.models.ResourceId
+import com.fpf.smartscansdk.core.ml.models.TensorData
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -59,7 +60,7 @@ class ClipTextEmbedderInstrumentedTest {
         every { mockModel.getEnv() } returns mockk<OrtEnvironment>()
 
         val raw = Array(1) { FloatArray(embedder.embeddingDim) { 1.0f } }
-        every { mockModel.run(any<Map<String, ai.onnxruntime.OnnxTensorLike>>()) } returns mapOf("out" to raw)
+        every { mockModel.run(any<Map<String, TensorData>>()) } returns mapOf("out" to raw)
 
         val mockTensor = mockk<OnnxTensor>(relaxed = true)
         every { OnnxTensor.createTensor(any<OrtEnvironment>(), any<LongBuffer>(), any<LongArray>()) } returns mockTensor
@@ -85,7 +86,7 @@ class ClipTextEmbedderInstrumentedTest {
         every { mockModel.getEnv() } returns mockk<OrtEnvironment>()
 
         val raw = Array(1) { FloatArray(embedder.embeddingDim) { 1.0f } }
-        every { mockModel.run(any<Map<String, ai.onnxruntime.OnnxTensorLike>>()) } returns mapOf("out" to raw)
+        every { mockModel.run(any<Map<String, TensorData>>()) } returns mapOf("out" to raw)
 
         val mockTensor = mockk<OnnxTensor>(relaxed = true)
         every { OnnxTensor.createTensor(any<OrtEnvironment>(), any<LongBuffer>(), any<LongArray>()) } returns mockTensor

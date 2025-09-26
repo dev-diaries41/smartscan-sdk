@@ -5,6 +5,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
+import com.fpf.smartscansdk.core.ml.embeddings.IEmbeddingStore
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.CLIP_EMBEDDING_LENGTH
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
@@ -30,14 +31,12 @@ class VideoIndexer(
     application: Application,
     listener: IProcessorListener<Long, Embedding>? = null,
     options: ProcessOptions = ProcessOptions(),
-): BatchProcessor<Long, Embedding>(application, listener, options){
+    private val store: IEmbeddingStore,
+    ): BatchProcessor<Long, Embedding>(application, listener, options){
 
     companion object {
         const val INDEX_FILENAME = "video_index.bin"
     }
-
-    // Cache not needed when indexing. This prevents unnecessary memory usage
-    private val store = FileEmbeddingStore(application.filesDir, INDEX_FILENAME, CLIP_EMBEDDING_LENGTH, useCache = false)
 
     override suspend fun onBatchComplete(context: Context, batch: List<Embedding>) {
         store.add(batch)
