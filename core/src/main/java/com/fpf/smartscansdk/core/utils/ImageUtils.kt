@@ -25,16 +25,16 @@ fun centerCrop(bitmap: Bitmap, imageSize: Int): Bitmap {
     return bitmapCropped
 }
 
-fun getScaledDimensions(imgWith: Int, imgHeight: Int, maxSize: Int = 1024): Pair<Int, Int> {
-    if (imgWith <= maxSize && imgHeight <= maxSize) {
-        return imgWith to imgHeight
+fun getScaledDimensions(width: Int, height: Int, maxSize: Int = 1024): Pair<Int, Int> {
+    if (width <= maxSize && height <= maxSize) {
+        return width to height
     }
-    return if (imgWith >= imgHeight) {
-        val scale = maxSize.toFloat() / imgWith
-        maxSize to (imgHeight * scale).toInt()
+    return if (width >= height) {
+        val scale = maxSize.toFloat() / width
+        maxSize to (height * scale).toInt()
     } else {
-        val scale = maxSize.toFloat() / imgHeight
-        (imgWith * scale).toInt() to maxSize
+        val scale = maxSize.toFloat() / height
+        (width * scale).toInt() to maxSize
     }
 }
 
