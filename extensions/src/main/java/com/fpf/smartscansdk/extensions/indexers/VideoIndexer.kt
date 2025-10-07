@@ -6,7 +6,6 @@ import android.content.Context
 import android.provider.MediaStore
 import com.fpf.smartscansdk.core.ml.embeddings.Embedding
 import com.fpf.smartscansdk.core.ml.embeddings.IEmbeddingStore
-import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.CLIP_EMBEDDING_LENGTH
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_X
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipConfig.IMAGE_SIZE_Y
 import com.fpf.smartscansdk.core.ml.embeddings.clip.ClipImageEmbedder
@@ -15,7 +14,6 @@ import com.fpf.smartscansdk.core.processors.BatchProcessor
 import com.fpf.smartscansdk.core.processors.IProcessorListener
 import com.fpf.smartscansdk.core.processors.ProcessOptions
 import com.fpf.smartscansdk.core.utils.extractFramesFromVideo
-import com.fpf.smartscansdk.extensions.embeddings.FileEmbeddingStore
 
 // ** Design Constraint**: For on-device vector search, the full index needs to be loaded in-memory (or make an Android native VectorDB)
 // File-based EmbeddingStore is used over a Room version due to significant faster index loading
@@ -42,9 +40,9 @@ class VideoIndexer(
         store.add(batch)
     }
 
-    override suspend fun onProcess(context: Context, id: Long): Embedding {
+    override suspend fun onProcess(context: Context, item: Long): Embedding {
         val contentUri = ContentUris.withAppendedId(
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI, item
         )
         val frameBitmaps = extractFramesFromVideo(context, contentUri, width = width, height = height, frameCount = frameCount)
 
@@ -54,7 +52,7 @@ class VideoIndexer(
         val embedding: FloatArray = generatePrototypeEmbedding(rawEmbeddings)
 
         return Embedding(
-            id = id,
+            id = item,
             date = System.currentTimeMillis(),
             embeddings = embedding
         )

@@ -36,16 +36,16 @@ class ImageIndexer(
         store.add(batch)
     }
 
-    override suspend fun onProcess(context: Context, id: Long): Embedding {
+    override suspend fun onProcess(context: Context, item: Long): Embedding {
         val contentUri = ContentUris.withAppendedId(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, item
         )
         val bitmap = getBitmapFromUri(context, contentUri, ClipConfig.IMAGE_SIZE_X)
         val embedding = withContext(NonCancellable) {
             embedder.embed(bitmap)
         }
         return Embedding(
-            id = id,
+            id = item,
             date = System.currentTimeMillis(),
             embeddings = embedding
         )
