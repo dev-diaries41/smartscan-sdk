@@ -22,7 +22,7 @@ Key features:
 Represents the result of classifying a single media item.
 
 | Property      | Type   | Description                                                            |
-| ------------- | ------ | ---------------------------------------------------------------------- |
+|---------------|--------|------------------------------------------------------------------------|
 | `source`      | `Uri`  | Original URI of the media item                                         |
 | `destination` | `Uri?` | URI representing the matched class, or `null` if classification failed |
 | `scanId`      | `Int`  | Identifier of the current scan session                                 |
@@ -36,7 +36,7 @@ Batch processor that classifies images using embeddings and prototypes.
 #### **Constructor**
 
 | Parameter          | Type                                       | Description                                                                                 |
-| ------------------ | ------------------------------------------ | ------------------------------------------------------------------------------------------- |
+|--------------------|--------------------------------------------|---------------------------------------------------------------------------------------------|
 | `application`      | `Application`                              | Application context for processing                                                          |
 | `embedder`         | `ClipImageEmbedder`                        | Embedder for generating image embeddings                                                    |
 | `prototypeList`    | `List<PrototypeEmbedding>`                 | List of class prototypes for few-shot classification                                        |
@@ -51,7 +51,7 @@ Batch processor that classifies images using embeddings and prototypes.
 ### **Methods**
 
 | Method                            | Description                                                                                                   |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+|-----------------------------------|---------------------------------------------------------------------------------------------------------------|
 | `onProcess(context, item)`        | Generates an embedding for the given URI, classifies it against prototypes, and returns an `OrganiserResult`. |
 | `onBatchComplete(context, batch)` | Delegates batch completion to the provided listener; allows client app to handle classification results.      |
 | `close()`                         | Releases the embedder session to free resources.                                                              |
