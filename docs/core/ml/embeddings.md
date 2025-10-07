@@ -14,7 +14,7 @@ Implements both generic contracts and reference CLIP-based providers for image a
 Represents a raw embedding vector for a single media item.
 
 | Property     | Type         | Description                                  |
-| ------------ | ------------ | -------------------------------------------- |
+|--------------|--------------|----------------------------------------------|
 | `id`         | `Long`       | Unique MediaStore or item ID                 |
 | `date`       | `Long`       | Timestamp associated with embedding creation |
 | `embeddings` | `FloatArray` | Vector representation                        |
@@ -24,7 +24,7 @@ Represents a raw embedding vector for a single media item.
 Represents a class-level prototype vector for few-shot classification.
 
 | Property     | Type         | Description                                  |
-| ------------ | ------------ | -------------------------------------------- |
+|--------------|--------------|----------------------------------------------|
 | `id`         | `String`     | Class identifier                             |
 | `date`       | `Long`       | Timestamp associated with prototype creation |
 | `embeddings` | `FloatArray` | Averaged vector representation               |
@@ -43,7 +43,7 @@ Defines a persistence interface for managing embedding data.
 * Clear cache or local data
 
 | Member     | Type                                              | Description                     |
-| ---------- | ------------------------------------------------- | ------------------------------- |
+|------------|---------------------------------------------------|---------------------------------|
 | `isCached` | `Boolean`                                         | Indicates if results are cached |
 | `exists`   | `Boolean`                                         | Checks if store data exists     |
 | `add()`    | `suspend fun add(newEmbeddings: List<Embedding>)` | Inserts embeddings              |
@@ -58,7 +58,7 @@ Defines a persistence interface for managing embedding data.
 Defines nearest-neighbor or similarity-based retrieval over stored embeddings.
 
 | Method                              | Description                                 |
-| ----------------------------------- | ------------------------------------------- |
+|-------------------------------------|---------------------------------------------|
 | `query(embedding, topK, threshold)` | Returns a ranked list of similar embeddings |
 
 ---
@@ -68,7 +68,7 @@ Defines nearest-neighbor or similarity-based retrieval over stored embeddings.
 Defines the contract for embedding generators (text, image, etc.).
 
 | Member           | Type          | Description                          |
-| ---------------- | ------------- | ------------------------------------ |
+|------------------|---------------|--------------------------------------|
 | `embeddingDim`   | `Int?`        | Embedding vector dimension           |
 | `embed(data: T)` | `suspend fun` | Generates embedding for input        |
 | `closeSession()` | `fun`         | Releases underlying model or session |
@@ -95,14 +95,14 @@ Supports on-device embedding generation for bitmaps.
 * Supports batch processing via `BatchProcessor`.
 
 | Method                         | Description                       |
-| ------------------------------ | --------------------------------- |
+|--------------------------------|-----------------------------------|
 | `initialize()`                 | Loads the ONNX model into memory  |
 | `isInitialized()`              | Checks model state                |
 | `embed(bitmap)`                | Generates embedding from a bitmap |
 | `embedBatch(context, bitmaps)` | Batch embedding                   |
 | `closeSession()`               | Frees model resources             |
 
-#### **Usage Example**
+**Usage Example:**
 
 ```kotlin
 val imageEmbedder = ClipImageEmbedder(resources, ModelSource.FilePath("/models/clip_image.onnx"))
@@ -125,14 +125,14 @@ Reference implementation of `TextEmbeddingProvider` using a CLIP ONNX model and 
 * Includes batch processing support.
 
 | Method                       | Description                   |
-| ---------------------------- | ----------------------------- |
+|------------------------------|-------------------------------|
 | `initialize()`               | Loads model weights           |
 | `isInitialized()`            | Checks model state            |
 | `embed(text)`                | Encodes and embeds input text |
 | `embedBatch(context, texts)` | Batch text embedding          |
 | `closeSession()`             | Releases resources            |
 
-#### **Usage Example**
+**Usage Example:**
 
 ```kotlin
 val textEmbedder = ClipTextEmbedder(resources, ModelSource.FilePath("/models/clip_text.onnx"))
@@ -150,7 +150,7 @@ textEmbedder.closeSession()
 Represents the outcome of a classification attempt.
 
 | Type      | Description                                                           |
-| --------- | --------------------------------------------------------------------- |
+|-----------|-----------------------------------------------------------------------|
 | `Success` | Contains `classId` of the closest match and similarity score          |
 | `Failure` | Contains a `ClassificationError` indicating why classification failed |
 
@@ -159,7 +159,7 @@ Represents the outcome of a classification attempt.
 Enumerates possible failure reasons:
 
 | Error                | Description                                                         |
-| -------------------- | ------------------------------------------------------------------- |
+|----------------------|---------------------------------------------------------------------|
 | `MINIMUM_CLASS_SIZE` | Not enough class prototypes to perform classification (requires ≥2) |
 | `THRESHOLD`          | Top similarity below minimum threshold                              |
 | `CONFIDENCE_MARGIN`  | Gap between top 2 similarities too small to be conclusive           |
@@ -168,8 +168,6 @@ Enumerates possible failure reasons:
 ### `classify`
 
 Performs few-shot classification of a single embedding.
-
-**Signature:**
 
 ```kotlin
 fun classify(
@@ -189,9 +187,7 @@ fun classify(
 5. Returns `Failure(CONFIDENCE_MARGIN)` if top-2 similarity gap < confidenceMargin.
 6. Returns `Success(classId, similarity)` if criteria are met.
 
----
-
-## **Usage Example**
+**Usage Example:**
 
 ```kotlin
 val result = classify(embedding, classPrototypes, threshold = 0.5f)
@@ -200,6 +196,70 @@ when(result) {
     is ClassificationResult.Failure -> println("Classification failed: ${result.error}")
 }
 ```
+
+---
+
+## **Utilities**
+
+Provides helper functions for embedding operations such as similarity calculation, normalization, and prototype generation.
+
+### `FloatArray.dot(other: FloatArray)`
+
+Computes the dot product between two vectors.
+
+```kotlin
+infix fun FloatArray.dot(other: FloatArray): Float
+```
+
+---
+
+### `normalizeL2(inputArray: FloatArray)`
+
+Performs L2 normalization on a vector.
+
+```kotlin
+fun normalizeL2(inputArray: FloatArray): FloatArray
+```
+
+**Behavior:** Returns a normalized vector with Euclidean norm = 1.
+
+---
+
+### `getSimilarities(embedding: FloatArray, comparisonEmbeddings: List<FloatArray>)`
+
+Computes similarity scores between a single embedding and a list of embeddings.
+
+```kotlin
+fun getSimilarities(embedding: FloatArray, comparisonEmbeddings: List<FloatArray>): List<Float>
+```
+
+**Behavior:** Returns a list of dot-product similarities.
+
+---
+
+### `getTopN(similarities: List<Float>, n: Int, threshold: Float = 0f)`
+
+Selects the indices of the top `n` similarities above a given threshold.
+
+```kotlin
+fun getTopN(similarities: List<Float>, n: Int, threshold: Float = 0f): List<Int>
+```
+
+---
+
+### `generatePrototypeEmbedding(rawEmbeddings: List<FloatArray>)`
+
+Generates a class-level prototype embedding by averaging multiple embeddings and normalizing.
+
+```kotlin
+suspend fun generatePrototypeEmbedding(rawEmbeddings: List<FloatArray>): FloatArray
+```
+
+**Behavior:**
+
+* Computes the element-wise average of input embeddings.
+* Returns the L2-normalized prototype vector.
+* Throws `IllegalStateException` if input is empty.
 
 ---
 
