@@ -1,5 +1,11 @@
 ## v1.0.2 – 05/10/2025
 
+### Changed
+* Moved MemoryUtils into processor
+* Moved IProcessorListener to its own file
+* Moved MemoryOptions into ProcessorData.kt
+* Update indexers to users correctly named parameter item instead of id to prevent issues with named parameters
+
 ### Fixed
 * Fixed typo in getScaledDimension function
 
