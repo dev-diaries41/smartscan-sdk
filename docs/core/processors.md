@@ -16,27 +16,40 @@ This module is ideal for tasks like embedding generation, model inference, or an
 
 ## **Core Data Types**
 
-### `ProcessorStatus`
-
-Represents the current state of a processor.
-
-| Status     | Description                         |
-| ---------- | ----------------------------------- |
-| `IDLE`     | Processor is not active             |
-| `ACTIVE`   | Processor is currently running      |
-| `COMPLETE` | Processor has finished successfully |
-| `FAILED`   | Processor has encountered an error  |
-
----
-
 ### `Metrics`
 
 Encapsulates processing results.
 
 | Type      | Properties                                                                 | Description                                                        |
-| --------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+|-----------|----------------------------------------------------------------------------|--------------------------------------------------------------------|
 | `Success` | `totalProcessed: Int`<br>`timeElapsed: Long`                               | Number of items processed and total duration                       |
 | `Failure` | `processedBeforeFailure: Int`<br>`timeElapsed: Long`<br>`error: Exception` | Number of items processed before failure, duration, and error info |
+
+---
+
+### `MemoryOptions`
+
+Configuration for memory-aware processing.
+
+| Property              | Type | Description                               |
+|-----------------------|------|-------------------------------------------|
+| `lowMemoryThreshold`  | Long | Memory level (in bytes) considered "low"  |
+| `highMemoryThreshold` | Long | Memory level (in bytes) considered "high" |
+| `minConcurrency`      | Int  | Minimum concurrency allowed               |
+| `maxConcurrency`      | Int  | Maximum concurrency allowed               |
+
+**Usage:** Controls the number of items processed concurrently based on available system memory. Works with `MemoryUtils` to dynamically calculate optimal concurrency.
+
+---
+
+### `MemoryUtils`
+
+Utility for memory-aware operations.
+
+**Key Methods:**
+
+* `getFreeMemory()`: Returns the current free memory in bytes.
+* `calculateConcurrencyLevel()`: Returns an optimal concurrency level based on available memory and `MemoryOptions`.
 
 ---
 
@@ -45,7 +58,7 @@ Encapsulates processing results.
 Configuration for processor execution.
 
 | Property    | Type            | Description                          |
-| ----------- | --------------- | ------------------------------------ |
+|-------------|-----------------|--------------------------------------|
 | `memory`    | `MemoryOptions` | Memory constraints for processing    |
 | `batchSize` | `Int`           | Number of items to process per batch |
 
@@ -56,7 +69,7 @@ Configuration for processor execution.
 Interface for receiving processor lifecycle callbacks.
 
 | Method                            | Description                                      |
-| --------------------------------- | ------------------------------------------------ |
+|-----------------------------------|--------------------------------------------------|
 | `onActive(context)`               | Called when processing starts                    |
 | `onBatchComplete(context, batch)` | Called after each batch is processed             |
 | `onComplete(context, metrics)`    | Called when all items are processed successfully |
@@ -78,7 +91,7 @@ Abstract base class for batched, asynchronous processing of items.
 ### **Properties**
 
 | Property      | Type                                 | Description                             |
-| ------------- | ------------------------------------ | --------------------------------------- |
+|---------------|--------------------------------------|-----------------------------------------|
 | `application` | `Application`                        | Provides context for processing tasks   |
 | `listener`    | `IProcessorListener<Input, Output>?` | Optional callback listener              |
 | `options`     | `ProcessOptions`                     | Configures batch size and memory limits |
@@ -88,7 +101,7 @@ Abstract base class for batched, asynchronous processing of items.
 ### **Methods**
 
 | Method                            | Description                                                                                                                                                    |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-----------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `run(items: List<Input>)`         | Executes processing over the list of items in batches. Returns `Metrics` indicating success or failure. Handles concurrency, batching, and listener callbacks. |
 | `onProcess(context, item)`        | Abstract. Implement logic to process a single item and produce an output.                                                                                      |
 | `onBatchComplete(context, batch)` | Abstract. Implement batch-level behavior, e.g., aggregation or storage of batch results. Can delegate to listener.                                             |
@@ -136,7 +149,6 @@ To implement a custom processor:
 2. Implement `onProcess` to handle individual items.
 3. Implement `onBatchComplete` to handle batch-level results.
 4. Optionally provide an `IProcessorListener` to observe lifecycle events.
-5. Configure `ProcessOptions` for batching and memory limits.
+5. Configure `ProcessOptions` and `MemoryOptions` for batching and memory limits.
 
 ---
-``
