@@ -5,7 +5,7 @@
 ### Core
 - [ML / Embeddings](core/ml/embeddings.md)
 - [ML / Models](core/ml/models.md)
-- [Processors](core/processor.md)
+- [Processors](core/processors.md)
 - [Utils](core/utils.md)
 
 ### Extensions
