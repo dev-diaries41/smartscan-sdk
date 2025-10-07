@@ -3,7 +3,6 @@ package com.fpf.smartscansdk.core.processors
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import com.fpf.smartscansdk.core.utils.MemoryUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async

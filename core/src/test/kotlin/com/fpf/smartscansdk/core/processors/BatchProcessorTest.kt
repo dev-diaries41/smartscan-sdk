@@ -2,7 +2,6 @@ package com.fpf.smartscansdk.core.processors
 
 import android.app.Application
 import android.util.Log
-import com.fpf.smartscansdk.core.utils.MemoryUtils
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
