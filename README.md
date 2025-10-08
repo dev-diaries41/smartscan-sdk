@@ -3,6 +3,7 @@
 ## Table of Contents
 
 * [Overview](#overview)
+* [Documentation](docs/README.md)
 * [Key Structure](#key-structure)
 * [Installation](#installation)
 
@@ -32,8 +33,6 @@ SmartScanSdk is a modular Android SDK that powers the **SmartScan app**. It prov
 The SDK is **extensible**, allowing developers to add ML models or features without bloating the core runtime.
 
 **Long-term vision:** SmartScanSdk was designed with the goal of becoming a **C++ cross-platform SDK** for **search and classification**, capable of running both **offline on edge devices** and in **bulk cloud environments**.
-
-Will add full docs soon.
 
 > **Note:** Because of its long-term cross-platform goals, some features may be experimental (extensions). However, the SDK is generally considered stable, as it is actively used in the SmartScan app, aswell as others``.
 
