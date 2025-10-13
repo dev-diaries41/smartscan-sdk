@@ -19,10 +19,9 @@ class FileEmbeddingRetriever(
 
         cachedIds = null // clear on new search
 
-        val storedEmbeddings = store.getAll()
+        val storedEmbeddings = store.get()
 
-        if (storedEmbeddings.isEmpty
-                ()) return emptyList()
+        if (storedEmbeddings.isEmpty()) return emptyList()
 
         val similarities = getSimilarities(embedding, storedEmbeddings.map { it.embeddings })
         val resultIndices = getTopN(similarities, topK, threshold)
@@ -36,6 +35,16 @@ class FileEmbeddingRetriever(
         }
         cachedIds = idsToCache
         return results
+    }
+
+    suspend fun query(start: Int, end: Int): List<Embedding> {
+        val ids = cachedIds ?: return emptyList()
+        val s = start.coerceAtLeast(0)
+        val e = end.coerceAtMost(ids.size)
+        if (s >= e) return emptyList()
+
+        val batch = store.get(ids)
+        return batch
     }
 }
 
