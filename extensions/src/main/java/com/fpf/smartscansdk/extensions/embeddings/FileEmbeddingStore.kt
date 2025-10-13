@@ -78,7 +78,7 @@ class FileEmbeddingStore(
     }
 
     // This explicitly makes clear the design constraints that requires the full index to be loaded in memory
-    override suspend fun getAll(): List<Embedding> = withContext(Dispatchers.IO){
+    override suspend fun get(): List<Embedding> = withContext(Dispatchers.IO){
         cache?.let { return@withContext it.values.toList() };
 
         FileInputStream(file).channel.use { ch ->
@@ -170,7 +170,7 @@ class FileEmbeddingStore(
         try {
             val map = cache ?: run {
                 // Load all embeddings into the map if cache is empty
-                val all = getAll()
+                val all = get()
                 LinkedHashMap(all.associateBy { it.id })
             }
 
@@ -188,6 +188,26 @@ class FileEmbeddingStore(
         }
     }
 
+    suspend fun get(ids: List<Long>): List<Embedding> = withContext(Dispatchers.IO) {
+        val map = cache ?: run {
+            val all = get()
+            LinkedHashMap(all.associateBy { it.id })
+        }
+        val embeddings = mutableListOf<Embedding>()
+
+        for (id in ids) {
+            map.get(id)?.let { embeddings.add(it) }
+        }
+        embeddings
+    }
+
+    suspend fun get(id: Long): Embedding? = withContext(Dispatchers.IO) {
+        val map = cache ?: run {
+            val all = get()
+            LinkedHashMap(all.associateBy { it.id })
+        }
+        map.get(id)
+    }
 
     override fun clear(){
         cache = null
