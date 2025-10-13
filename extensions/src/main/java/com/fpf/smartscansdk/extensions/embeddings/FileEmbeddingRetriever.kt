@@ -8,26 +8,34 @@ import com.fpf.smartscansdk.core.ml.embeddings.getTopN
 class FileEmbeddingRetriever(
     private val store: FileEmbeddingStore
 ): IRetriever {
+
+    private var cachedIds: List<Long>? = null
+
     override suspend fun query(
         embedding: FloatArray,
         topK: Int,
         threshold: Float
     ): List<Embedding> {
 
+        cachedIds = null // clear on new search
+
         val storedEmbeddings = store.getAll()
 
-        if (storedEmbeddings.isEmpty()) {
-            return emptyList()
-        }
+        if (storedEmbeddings.isEmpty
+                ()) return emptyList()
 
         val similarities = getSimilarities(embedding, storedEmbeddings.map { it.embeddings })
-        val results = getTopN(similarities, topK, threshold)
+        val resultIndices = getTopN(similarities, topK, threshold)
 
-        if (results.isEmpty()) {
-            return emptyList()
+        if (resultIndices.isEmpty()) return emptyList()
+
+        val idsToCache = mutableListOf<Long>()
+        val results = resultIndices.map{idx ->
+            idsToCache.add( storedEmbeddings[idx].id)
+            storedEmbeddings[idx]
         }
-
-        return results.map{idx -> storedEmbeddings[idx]}
+        cachedIds = idsToCache
+        return results
     }
 }
 
