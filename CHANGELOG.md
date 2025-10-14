@@ -1,3 +1,13 @@
+## v1.0.3 – 14/10/2025
+
+### Added
+
+* `FileEmbeddingRetriever` now supports batch retrieval via `start` and `end` indices with a new `query` overload.
+* `FileEmbeddingStore` `getAll` method renamed to `get`, and two new overloads added:
+    * `get(ids: List<Long>)` – fetch multiple embeddings by ID.
+    * `get(id: Long)` – fetch a single embedding by ID.
+* Tests added to verify correct behavior and boundary handling for the new query overload.
+
 ## v1.0.2 – 05/10/2025
 
 ### Changed
