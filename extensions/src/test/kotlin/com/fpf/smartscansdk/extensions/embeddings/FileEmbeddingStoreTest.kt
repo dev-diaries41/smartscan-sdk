@@ -51,7 +51,7 @@ class FileEmbeddingStoreTest {
         )
 
         store.add(embeddings)
-        val loaded = store.getAll()
+        val loaded = store.get()
 
         Assertions.assertEquals(2, loaded.size)
         Assertions.assertEquals(embeddings[0].id, loaded[0].id)
@@ -72,7 +72,7 @@ class FileEmbeddingStoreTest {
         store.add(first)
         store.add(second)
 
-        val all = store.getAll()
+        val all = store.get()
         Assertions.assertEquals(2, all.size)
         Assertions.assertEquals(1, all[0].id)
         Assertions.assertEquals(2, all[1].id)
@@ -90,7 +90,7 @@ class FileEmbeddingStoreTest {
         store.add(embeddings)
         store.remove(listOf(2L))
 
-        val remaining = store.getAll()
+        val remaining = store.get()
         Assertions.assertEquals(2, remaining.size)
         Assertions.assertFalse(remaining.any { it.id == 2L })
     }
@@ -101,7 +101,7 @@ class FileEmbeddingStoreTest {
         val embeddings = listOf(embedding(1, 100, FloatArray(embeddingLength) { 0.1f }))
         store.add(embeddings)
 
-        val firstLoad = store.getAll()
+        val firstLoad = store.get()
         if(store.useCache){
             Assertions.assertTrue(store.isCached)
         }else{
@@ -111,7 +111,7 @@ class FileEmbeddingStoreTest {
         store.clear()
         Assertions.assertFalse(store.isCached)
 
-        val secondLoad = store.getAll()
+        val secondLoad = store.get()
         assertTrue(firstLoad.zip(secondLoad).all { (a, b) ->
             a.id == b.id && a.date == b.date && a.embeddings.contentEquals(b.embeddings)
         })
@@ -123,13 +123,13 @@ class FileEmbeddingStoreTest {
         val embeddings = listOf(embedding(1, 100, FloatArray(embeddingLength) { 0.1f }))
         store.add(embeddings)
 
-        val firstLoad = store.getAll()
+        val firstLoad = store.get()
         Assertions.assertFalse(store.isCached)
 
         store.clear()
         Assertions.assertFalse(store.isCached)
 
-        val secondLoad = store.getAll()
+        val secondLoad = store.get()
         assertTrue(firstLoad.zip(secondLoad).all { (a, b) ->
             a.id == b.id && a.date == b.date && a.embeddings.contentEquals(b.embeddings)
         })
