@@ -43,7 +43,7 @@ class FileEmbeddingRetriever(
         val e = end.coerceAtMost(ids.size)
         if (s >= e) return emptyList()
 
-        val batch = store.get(ids)
+        val batch = store.get(ids.subList(s, e))
         return batch
     }
 }
