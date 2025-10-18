@@ -15,8 +15,7 @@ import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 
 class FileEmbeddingStore(
-    dir: File,
-    filename: String,
+    private val file: File,
     private val embeddingLength: Int,
     val useCache: Boolean = true,
     ):
@@ -26,7 +25,6 @@ class FileEmbeddingStore(
         const val TAG = "FileEmbeddingStore"
     }
 
-    private val file = File(dir, filename)
     private var cache: LinkedHashMap<Long, Embedding>? = null
 
     override val exists: Boolean get() = file.exists()
