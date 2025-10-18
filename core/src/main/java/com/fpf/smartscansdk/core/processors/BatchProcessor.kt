@@ -24,6 +24,7 @@ abstract class BatchProcessor<Input, Output>(
     open suspend fun run(items: List<Input>): Metrics = withContext(Dispatchers.IO) {
         val processedCount = AtomicInteger(0)
         val startTime = System.currentTimeMillis()
+        var totalSuccess = 0
 
         try {
             if (items.isEmpty()) {
@@ -58,11 +59,12 @@ abstract class BatchProcessor<Input, Output>(
                 }
 
                 val outputBatch = deferredResults.mapNotNull { it.await() }
+                totalSuccess += outputBatch.size
                 onBatchComplete(application, outputBatch)
             }
 
             val endTime = System.currentTimeMillis()
-            val metrics = Metrics.Success(processedCount.get(), timeElapsed = endTime - startTime)
+            val metrics = Metrics.Success(totalSuccess, timeElapsed = endTime - startTime)
 
             listener?.onComplete(application, metrics)
             metrics
@@ -72,7 +74,7 @@ abstract class BatchProcessor<Input, Output>(
         }
         catch (e: Exception) {
             val metrics = Metrics.Failure(
-                processedBeforeFailure = processedCount.get(),
+                processedBeforeFailure = totalSuccess,
                 timeElapsed = System.currentTimeMillis() - startTime,
                 error = e
             )
