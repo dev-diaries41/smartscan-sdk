@@ -36,8 +36,8 @@ class FileEmbeddingStoreTest {
 
     private val embeddingLength = 4
 
-    private fun createStore(fileName: String = "embeddings.bin", useCache: Boolean = true) =
-        FileEmbeddingStore(tempDir, fileName, embeddingLength, useCache = useCache)
+    private fun createStore(file: File = File(tempDir, "embeddings.bin"), useCache: Boolean = true) =
+        FileEmbeddingStore(file, embeddingLength, useCache = useCache)
 
     private fun embedding(id: Long, date: Long, values: FloatArray) =
         Embedding(id, date, values)
