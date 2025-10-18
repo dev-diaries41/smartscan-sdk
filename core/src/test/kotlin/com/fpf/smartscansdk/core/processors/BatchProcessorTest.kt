@@ -74,7 +74,7 @@ class BatchProcessorTest {
         assertEquals(0, metrics.totalProcessed)
 
         coVerify(exactly = 0) { mockListener.onProgress(any(), any()) }
-        coVerify ( exactly = 0){mockListener.onComplete(mockApp, any()) }  // shouldnt call because early return
+        coVerify ( exactly = 1){mockListener.onComplete(mockApp, any()) }
     }
 
     @Test
