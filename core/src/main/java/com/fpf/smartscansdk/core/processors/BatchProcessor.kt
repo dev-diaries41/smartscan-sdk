@@ -29,7 +29,9 @@ abstract class BatchProcessor<Input, Output>(
         try {
             if (items.isEmpty()) {
                 Log.w(TAG, "No items to process.")
-                return@withContext Metrics.Success()
+                val metrics = Metrics.Success()
+                listener?.onComplete(application, metrics)
+                return@withContext metrics
             }
 
             val memoryUtils = MemoryUtils(application, options.memory)
