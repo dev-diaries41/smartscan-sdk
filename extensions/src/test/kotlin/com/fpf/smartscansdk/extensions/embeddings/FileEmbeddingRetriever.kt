@@ -20,8 +20,8 @@ class FileEmbeddingRetrieverTest {
     private fun embedding(id: Long, date: Long, values: FloatArray) =
         Embedding(id, date, values)
 
-    private fun createStore(fileName: String = "embeddings.bin") =
-        FileEmbeddingStore(tempDir, fileName, embeddingLength)
+    private fun createStore(file: File = File(tempDir, "embeddings.bin"), useCache: Boolean = true) =
+        FileEmbeddingStore(file, embeddingLength, useCache = useCache)
 
     @Test
     fun `query batch retrieval with start and end works`() = runTest {

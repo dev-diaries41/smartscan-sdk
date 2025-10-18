@@ -52,14 +52,14 @@ class EmbeddingLoadingBenchmarkTest {
 
 
 
-        val tempDir = File(context.cacheDir, "tempEmbeddings").apply { mkdirs() }
-        val store = FileEmbeddingStore(tempDir, "embeddings.bin", embeddingLength)
+        val embeddingsFile = File(context.cacheDir, "embeddings.bin")
+        val store = FileEmbeddingStore(embeddingsFile,  embeddingLength)
 
         store.add(embeddings.map { it.toEmbedding() })
         store.clear() // force reload
 
         val fileTime = measureNanoTime {
-            val loadedFile = store.getAll()
+            val loadedFile = store.get()
             assertEquals(numEmbeddings, loadedFile.size)
         }
 
