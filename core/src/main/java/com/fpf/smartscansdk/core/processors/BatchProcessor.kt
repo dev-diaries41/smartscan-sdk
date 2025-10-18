@@ -44,13 +44,14 @@ abstract class BatchProcessor<Input, Output>(
                         semaphore.withPermit {
                             try {
                                 val output = onProcess(application, item)
-                                val current = processedCount.incrementAndGet()
-                                val progress = current.toFloat() / items.size
-                                listener?.onProgress(application, progress)
                                 output
                             } catch (e: Exception) {
                                 listener?.onError(application, e, item)
                                 null
+                            }finally {
+                                val current = processedCount.incrementAndGet()
+                                val progress = current.toFloat() / items.size
+                                listener?.onProgress(application, progress)
                             }
                         }
                     }
