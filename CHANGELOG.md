@@ -1,3 +1,11 @@
+## v1.0.4 – 19/10/2025
+
+### Changed
+
+* Pass file directly in `FileEmbeddingStore` constructor instead of dir and filename
+* Update batch processor to ensure progress is tracked correctly regardless of errors
+* Update batch processor to call onComplete even if items is empty
+
 ## v1.0.3 – 14/10/2025
 
 ### Added
