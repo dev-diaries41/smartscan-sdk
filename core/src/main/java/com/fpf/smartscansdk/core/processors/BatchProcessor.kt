@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 // For BatchProcessor’s use case—long-running, batched,  asynchronous processing—the Application context should be used.
 abstract class BatchProcessor<Input, Output>(
-    private val application: Application,
+    private val context: Context,
     protected val listener: IProcessorListener<Input, Output>? = null,
     private val options: ProcessOptions = ProcessOptions(),
 ) {
@@ -33,13 +33,13 @@ abstract class BatchProcessor<Input, Output>(
             if (items.isEmpty()) {
                 Log.w(TAG, "No items to process.")
                 val metrics = Metrics.Success()
-                listener?.onComplete(application, metrics)
+                listener?.onComplete(context.applicationContext, metrics)
                 return@withContext metrics
             }
 
-            val memoryUtils = MemoryUtils(application, options.memory)
+            val memoryUtils = MemoryUtils(context.applicationContext, options.memory)
 
-            listener?.onActive(application)
+            listener?.onActive(context.applicationContext)
 
             for (batch in items.chunked(options.batchSize)) {
                 val currentConcurrency = memoryUtils.calculateConcurrencyLevel()
@@ -49,15 +49,15 @@ abstract class BatchProcessor<Input, Output>(
                     async {
                         semaphore.withPermit {
                             try {
-                                val output = onProcess(application, item)
+                                val output = onProcess(context.applicationContext, item)
                                 output
                             } catch (e: Exception) {
-                                listener?.onError(application, e, item)
+                                listener?.onError(context.applicationContext, e, item)
                                 null
                             }finally {
                                 val current = processedCount.incrementAndGet()
                                 val progress = current.toFloat() / items.size
-                                listener?.onProgress(application, progress)
+                                listener?.onProgress(context.applicationContext, progress)
                             }
                         }
                     }
@@ -65,13 +65,13 @@ abstract class BatchProcessor<Input, Output>(
 
                 val outputBatch = deferredResults.mapNotNull { it.await() }
                 totalSuccess += outputBatch.size
-                onBatchComplete(application, outputBatch)
+                onBatchComplete(context.applicationContext, outputBatch)
             }
 
             val endTime = System.currentTimeMillis()
             val metrics = Metrics.Success(totalSuccess, timeElapsed = endTime - startTime)
 
-            listener?.onComplete(application, metrics)
+            listener?.onComplete(context.applicationContext, metrics)
             metrics
         }
         catch (e: CancellationException) {
@@ -83,7 +83,7 @@ abstract class BatchProcessor<Input, Output>(
                 timeElapsed = System.currentTimeMillis() - startTime,
                 error = e
             )
-            listener?.onFail(application, metrics)
+            listener?.onFail(context.applicationContext, metrics)
             metrics
         }
     }

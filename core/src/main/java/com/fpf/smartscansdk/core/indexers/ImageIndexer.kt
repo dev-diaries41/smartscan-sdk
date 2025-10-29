@@ -1,6 +1,5 @@
 package com.fpf.smartscansdk.core.indexers
 
-import android.app.Application
 import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
@@ -23,10 +22,10 @@ class ImageIndexer(
     private val embedder: ImageEmbeddingProvider,
     private val store: IEmbeddingStore,
     private val bitmapMaxSize: Int = 225,
-    application: Application,
+    context: Context,
     listener: IProcessorListener<Long, Embedding>? = null,
     options: ProcessOptions = ProcessOptions(),
-    ): BatchProcessor<Long, Embedding>(application, listener, options){
+    ): BatchProcessor<Long, Embedding>(context, listener, options){
 
     companion object {
         const val INDEX_FILENAME = "image_index.bin"

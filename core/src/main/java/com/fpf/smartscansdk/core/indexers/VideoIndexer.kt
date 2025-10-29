@@ -24,11 +24,11 @@ class VideoIndexer(
     private val frameCount: Int = 10,
     private val width: Int,
     private val height: Int,
-    application: Application,
+    context: Context,
     listener: IProcessorListener<Long, Embedding>? = null,
     options: ProcessOptions = ProcessOptions(),
     private val store: IEmbeddingStore,
-    ): BatchProcessor<Long, Embedding>(application, listener, options){
+    ): BatchProcessor<Long, Embedding>(context, listener, options){
 
     companion object {
         const val INDEX_FILENAME = "video_index.bin"
