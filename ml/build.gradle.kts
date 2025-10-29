@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.fpf.smartscansdk.core"
+    namespace = "com.fpf.smartscansdk.ml"
     compileSdk = 36
 
     defaultConfig {
