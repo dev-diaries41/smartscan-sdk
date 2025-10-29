@@ -1,6 +1,5 @@
 package com.fpf.smartscansdk.core.processors
 
-import android.app.Application
 import android.content.Context
 import android.util.Log
 import com.fpf.smartscansdk.core.data.IProcessorListener
@@ -20,12 +19,12 @@ import kotlin.test.assertTrue
 
 class BatchProcessorTest {
 
-    private lateinit var mockApp: Application
+    private lateinit var context: Context
     private lateinit var mockListener: IProcessorListener<Int, Int>
 
     @BeforeEach
     fun setup() {
-        mockApp = mockk(relaxed = true)
+        context = mockk(relaxed = true)
         mockListener = mockk(relaxed = true)
         mockkStatic(Log::class)
         every { Log.d(any<String>(), any<String>()) } returns 0
@@ -40,11 +39,11 @@ class BatchProcessorTest {
 
     // Simple concrete subclass for testing
     class TestProcessor(
-        app: Application,
+        context: Context,
         listener: IProcessorListener<Int, Int>,
         private val failOn: Set<Int> = emptySet(),
         options: ProcessOptions = ProcessOptions(batchSize = 2)
-    ) : BatchProcessor<Int, Int>(app, listener, options) {
+    ) : BatchProcessor<Int, Int>(context, listener, options) {
 
         override suspend fun onProcess(context: Context, item: Int): Int {
             if (item in failOn) throw RuntimeException("Failed item $item")
@@ -58,7 +57,7 @@ class BatchProcessorTest {
 
     @Test
     fun `run processes all items successfully`() = runBlocking {
-        val processor = TestProcessor(mockApp, mockListener)
+        val processor = TestProcessor(context, mockListener)
         val items = listOf(1, 2, 3, 4)
 
         val metrics = processor.run(items)
@@ -66,15 +65,15 @@ class BatchProcessorTest {
         assertTrue(metrics is Metrics.Success)
         assertEquals(4, metrics.totalProcessed)
 
-        coVerify { mockListener.onActive(mockApp) }
-        coVerify { mockListener.onProgress(mockApp, match { it in 0f..1f }) }
-        coVerify { mockListener.onComplete(mockApp, any()) }
+        coVerify { mockListener.onActive(context.applicationContext) }
+        coVerify { mockListener.onProgress(context.applicationContext, match { it in 0f..1f }) }
+        coVerify { mockListener.onComplete(context.applicationContext, any()) }
         coVerify(exactly = 0) { mockListener.onError(any(), any(), any()) }
     }
 
     @Test
     fun `run handles empty input`() = runBlocking {
-        val processor = TestProcessor(mockApp, mockListener)
+        val processor = TestProcessor(context, mockListener)
         val items = emptyList<Int>()
 
         val metrics = processor.run(items)
@@ -82,13 +81,13 @@ class BatchProcessorTest {
         assertTrue(metrics is Metrics.Success)
         assertEquals(0, metrics.totalProcessed)
 
-        coVerify(exactly = 0) { mockListener.onProgress(any(), any()) }
-        coVerify(exactly = 1) { mockListener.onComplete(mockApp, any()) }
+        coVerify(exactly = 0) { mockListener.onProgress(context, any()) }
+        coVerify(exactly = 1) { mockListener.onComplete(context.applicationContext, any()) }
     }
 
     @Test
     fun `run handles item failures`() = runBlocking {
-        val processor = TestProcessor(mockApp, mockListener, failOn = setOf(2, 4))
+        val processor = TestProcessor(context, mockListener, failOn = setOf(2, 4))
         val items = listOf(1, 2, 3, 4)
 
         val metrics = processor.run(items)
@@ -98,7 +97,7 @@ class BatchProcessorTest {
 
         verify {
             mockListener.onError(
-                mockApp,
+                context.applicationContext,
                 match { it.message?.contains("Failed item") == true },
                 any()
             )
@@ -107,7 +106,7 @@ class BatchProcessorTest {
 
     @Test
     fun `run handles exceptions gracefully`() = runBlocking {
-        val processor = TestProcessor(mockApp, mockListener, failOn = setOf(2))
+        val processor = TestProcessor(context, mockListener, failOn = setOf(2))
         val items = listOf(1, 2, 3)
 
         val metrics = processor.run(items)
@@ -117,7 +116,7 @@ class BatchProcessorTest {
 
         coVerify {
             mockListener.onError(
-                mockApp,
+                context.applicationContext,
                 match { it.message?.contains("Failed item 2") == true },
                 2
             )
