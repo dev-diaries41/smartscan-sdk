@@ -1,9 +1,9 @@
-package com.fpf.smartscansdk.core.ml.embeddings
+package com.fpf.smartscansdk.ml.models.providers.embeddings
 
-import com.fpf.smartscansdk.ml.models.providers.embeddings.ClassificationError
-import com.fpf.smartscansdk.ml.models.providers.embeddings.ClassificationResult
-import com.fpf.smartscansdk.ml.models.providers.embeddings.PrototypeEmbedding
-import com.fpf.smartscansdk.ml.models.providers.embeddings.classify
+import com.fpf.smartscansdk.core.data.ClassificationError
+import com.fpf.smartscansdk.core.data.ClassificationResult
+import com.fpf.smartscansdk.core.data.PrototypeEmbedding
+import com.fpf.smartscansdk.core.embeddings.dot
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -26,7 +26,10 @@ class FewShotClassifierTest {
 
         val result = classify(embedding, prototypes, threshold, minMargin)
         Assertions.assertTrue(result is ClassificationResult.Failure)
-        Assertions.assertEquals(ClassificationError.THRESHOLD, (result as ClassificationResult.Failure).error)
+        Assertions.assertEquals(
+            ClassificationError.THRESHOLD,
+            (result as ClassificationResult.Failure).error
+        )
     }
 
     @Test
@@ -39,7 +42,10 @@ class FewShotClassifierTest {
 
         val result = classify(embedding, prototypes, threshold, minMargin)
         Assertions.assertTrue(result is ClassificationResult.Failure)
-        Assertions.assertEquals(ClassificationError.CONFIDENCE_MARGIN, (result as ClassificationResult.Failure).error)
+        Assertions.assertEquals(
+            ClassificationError.CONFIDENCE_MARGIN,
+            (result as ClassificationResult.Failure).error
+        )
     }
 
     @Test

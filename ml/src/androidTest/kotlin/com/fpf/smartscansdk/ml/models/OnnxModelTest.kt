@@ -1,12 +1,11 @@
-package com.fpf.smartscansdk.core.ml.models
+package com.fpf.smartscansdk.ml.models
 
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import ai.onnxruntime.*
-import com.fpf.smartscansdk.ml.models.IModelLoader
-import com.fpf.smartscansdk.ml.models.OnnxModel
-import com.fpf.smartscansdk.ml.models.TensorData
+import com.fpf.smartscansdk.ml.data.IModelLoader
+import com.fpf.smartscansdk.ml.data.TensorData
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every

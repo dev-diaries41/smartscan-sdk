@@ -1,8 +1,17 @@
 package com.fpf.smartscansdk.core.processors
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
-import io.mockk.*
+import com.fpf.smartscansdk.core.data.IProcessorListener
+import com.fpf.smartscansdk.core.data.Metrics
+import com.fpf.smartscansdk.core.data.ProcessOptions
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkConstructor
+import io.mockk.mockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,7 +27,7 @@ class BatchProcessorTest {
     fun setup() {
         mockApp = mockk(relaxed = true)
         mockListener = mockk(relaxed = true)
-        mockkStatic(android.util.Log::class)
+        mockkStatic(Log::class)
         every { Log.d(any<String>(), any<String>()) } returns 0
         every { Log.e(any<String>(), any<String>()) } returns 0
         every { Log.i(any<String>(), any<String>()) } returns 0
@@ -37,12 +46,12 @@ class BatchProcessorTest {
         options: ProcessOptions = ProcessOptions(batchSize = 2)
     ) : BatchProcessor<Int, Int>(app, listener, options) {
 
-        override suspend fun onProcess(context: android.content.Context, item: Int): Int {
+        override suspend fun onProcess(context: Context, item: Int): Int {
             if (item in failOn) throw RuntimeException("Failed item $item")
             return item * 2
         }
 
-        override suspend fun onBatchComplete(context: android.content.Context, batch: List<Int>) {
+        override suspend fun onBatchComplete(context: Context, batch: List<Int>) {
             // no-op for testing
         }
     }
@@ -74,7 +83,7 @@ class BatchProcessorTest {
         assertEquals(0, metrics.totalProcessed)
 
         coVerify(exactly = 0) { mockListener.onProgress(any(), any()) }
-        coVerify ( exactly = 1){mockListener.onComplete(mockApp, any()) }
+        coVerify(exactly = 1) { mockListener.onComplete(mockApp, any()) }
     }
 
     @Test
@@ -88,7 +97,11 @@ class BatchProcessorTest {
         assertEquals(2, metrics.totalProcessed) // only successful items counted
 
         verify {
-            mockListener.onError(mockApp, match { it.message?.contains("Failed item") == true }, any())
+            mockListener.onError(
+                mockApp,
+                match { it.message?.contains("Failed item") == true },
+                any()
+            )
         }
     }
 
@@ -102,6 +115,12 @@ class BatchProcessorTest {
         assertTrue(metrics is Metrics.Success)
         assertEquals(2, metrics.totalProcessed)
 
-        coVerify { mockListener.onError(mockApp, match { it.message?.contains("Failed item 2") == true }, 2) }
+        coVerify {
+            mockListener.onError(
+                mockApp,
+                match { it.message?.contains("Failed item 2") == true },
+                2
+            )
+        }
     }
 }

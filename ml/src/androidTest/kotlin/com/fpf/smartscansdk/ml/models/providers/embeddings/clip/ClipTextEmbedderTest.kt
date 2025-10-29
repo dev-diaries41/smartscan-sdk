@@ -1,14 +1,13 @@
-package com.fpf.smartscansdk.core.ml.embeddings.clip
+package com.fpf.smartscansdk.ml.models.providers.embeddings.clip
 
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import android.content.Context
 import android.content.res.Resources
 import androidx.test.core.app.ApplicationProvider
-import com.fpf.smartscansdk.ml.models.providers.embeddings.clip.ClipTextEmbedder
+import com.fpf.smartscansdk.ml.data.ResourceId
+import com.fpf.smartscansdk.ml.data.TensorData
 import com.fpf.smartscansdk.ml.models.OnnxModel
-import com.fpf.smartscansdk.ml.models.ResourceId
-import com.fpf.smartscansdk.ml.models.TensorData
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -21,14 +20,11 @@ import org.junit.Assert.assertTrue
 import java.nio.LongBuffer
 
 class ClipTextEmbedderInstrumentedTest {
-
-    private lateinit var resources: Resources
     private lateinit var context: Context
 
     @Before
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
-        resources = context.resources
         mockkStatic(OnnxTensor::class)
     }
 
@@ -39,7 +35,7 @@ class ClipTextEmbedderInstrumentedTest {
 
     @Test
     fun `initialize calls model loadModel and sets initialized`() = runBlocking {
-        val embedder = ClipTextEmbedder(resources, ResourceId(0))
+        val embedder = ClipTextEmbedder(context, ResourceId(0))
         val mockModel = mockk<OnnxModel>(relaxed = true)
         coEvery { mockModel.loadModel() } answers { every { mockModel.isLoaded() } returns true }
         val field = embedder::class.java.getDeclaredField("model")
@@ -54,7 +50,7 @@ class ClipTextEmbedderInstrumentedTest {
 
     @Test
     fun `embed returns normalized vector of expected dimension`() = runBlocking {
-        val embedder = ClipTextEmbedder(resources, ResourceId(0))
+        val embedder = ClipTextEmbedder(context, ResourceId(0))
         val mockModel = mockk<OnnxModel>(relaxed = true)
         every { mockModel.isLoaded() } returns true
         every { mockModel.getInputNames() } returns listOf("input")
@@ -80,7 +76,7 @@ class ClipTextEmbedderInstrumentedTest {
 
     @Test
     fun `embedBatch returns embeddings for all items`() = runBlocking {
-        val embedder = ClipTextEmbedder(resources, ResourceId(0))
+        val embedder = ClipTextEmbedder(context, ResourceId(0))
         val mockModel = mockk<OnnxModel>(relaxed = true)
         every { mockModel.isLoaded() } returns true
         every { mockModel.getInputNames() } returns listOf("input")
@@ -98,7 +94,7 @@ class ClipTextEmbedderInstrumentedTest {
         field.set(embedder, mockModel)
 
         val texts = listOf("Hello", "World")
-        val results = embedder.embedBatch(context, texts)
+        val results = embedder.embedBatch( texts)
 
         assertEquals(2, results.size)
         assertEquals(embedder.embeddingDim, results[0].size)
@@ -106,7 +102,7 @@ class ClipTextEmbedderInstrumentedTest {
 
     @Test
     fun `closeSession closes model once`() {
-        val embedder = ClipTextEmbedder(resources, ResourceId(0))
+        val embedder = ClipTextEmbedder(context, ResourceId(0))
         val mockModel = mockk<OnnxModel>(relaxed = true)
         val field = embedder::class.java.getDeclaredField("model")
         field.isAccessible = true
