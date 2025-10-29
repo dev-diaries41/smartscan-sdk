@@ -35,3 +35,24 @@ suspend fun generatePrototypeEmbedding(rawEmbeddings: List<FloatArray>): FloatAr
 
         normalizeL2(FloatArray(embeddingLength) { i -> sum[i] / rawEmbeddings.size })
     }
+
+
+fun flattenEmbeddings(embeddings: List<FloatArray>, embeddingDim: Int): FloatArray {
+    val batchSize = embeddings.size
+    val flattened = FloatArray(batchSize * embeddingDim)
+    for (i in embeddings.indices) {
+        System.arraycopy(embeddings[i], 0, flattened, i * embeddingDim, embeddingDim)
+    }
+    return flattened
+}
+
+fun unflattenEmbeddings(flattened: FloatArray, embeddingDim: Int): List<FloatArray> {
+    val batchSize = flattened.size / embeddingDim
+    val embeddings = mutableListOf<FloatArray>()
+    for (i in 0 until batchSize) {
+        val embedding = FloatArray(embeddingDim)
+        System.arraycopy(flattened, i * embeddingDim, embedding, 0, embeddingDim)
+        embeddings.add(embedding)
+    }
+    return embeddings
+}
