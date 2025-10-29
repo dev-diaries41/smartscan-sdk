@@ -1,7 +1,7 @@
 package com.fpf.smartscansdk.core.embeddings
 
 import android.util.Log
-import com.fpf.smartscansdk.core.ml.embeddings.Embedding
+import com.fpf.smartscansdk.core.data.Embedding
 import io.mockk.every
 import io.mockk.mockkStatic
 import kotlinx.coroutines.test.runTest
