@@ -1,15 +1,11 @@
 package com.fpf.smartscansdk.ml.models.providers.embeddings
 
+import com.fpf.smartscansdk.core.data.ClassificationError
+import com.fpf.smartscansdk.core.data.ClassificationResult
 import com.fpf.smartscansdk.core.data.PrototypeEmbedding
 import com.fpf.smartscansdk.core.embeddings.getSimilarities
 import com.fpf.smartscansdk.core.embeddings.getTopN
 
-sealed class ClassificationResult {
-    data class Success(val classId: String, val similarity: Float ): ClassificationResult()
-    data class Failure(val error: ClassificationError ): ClassificationResult()
-}
-
-enum class ClassificationError{MINIMUM_CLASS_SIZE, THRESHOLD, CONFIDENCE_MARGIN, LABELLED_BAD}
 
 fun classify(embedding: FloatArray, classPrototypes: List<PrototypeEmbedding>, threshold: Float = 0.4f, confidenceMargin: Float = 0.05f ): ClassificationResult{
     if(classPrototypes.size < 2) return ClassificationResult.Failure(error= ClassificationError.MINIMUM_CLASS_SIZE) // Using a single class prototype leads to many false positives
