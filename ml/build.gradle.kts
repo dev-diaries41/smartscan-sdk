@@ -1,9 +1,9 @@
+import java.io.ByteArrayOutputStream
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("maven-publish")
-    id("com.google.devtools.ksp")
-
 }
 
 android {
@@ -13,6 +13,7 @@ android {
     defaultConfig {
         minSdk = 30
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     packaging {
@@ -20,7 +21,7 @@ android {
             listOf(
                 "META-INF/LICENSE.md",
                 "META-INF/LICENSE-notice.md",
-            )
+                )
         )
     }
 
@@ -39,10 +40,13 @@ android {
         jvmTarget = "17"
     }
 
+    buildFeatures {
+        // Add any enabled features here if needed
+    }
+
     lint {
         targetSdk = 34
     }
-
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -51,7 +55,6 @@ android {
             }
         }
     }
-
 }
 
 java {
@@ -62,9 +65,10 @@ java {
 }
 
 dependencies {
-    // Expose core-ktx to consumers of core or extensions
-    api(libs.androidx.core.ktx)
-    
+    api(project(":core"))
+    implementation(libs.androidx.documentfile)
+    implementation(libs.onnxruntime.android)
+
     // JVM unit tests
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
@@ -78,12 +82,6 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.6.1")
     androidTestImplementation("io.mockk:mockk-android:1.14.5")
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-
-    androidTestImplementation("androidx.room:room-runtime:2.7.2")
-    androidTestImplementation("androidx.room:room-ktx:2.7.2")
-    androidTestImplementation("androidx.room:room-testing:2.7.2")
-    ksp("androidx.room:room-compiler:2.7.2")
-
 }
 
 val gitVersion: String by lazy {
@@ -95,7 +93,6 @@ val gitVersion: String by lazy {
         if (proc.waitFor() == 0) out.removePrefix("v") else throw RuntimeException("git failed")
     }.getOrDefault("1.0.0")
 }
-
 
 publishing {
     publications {

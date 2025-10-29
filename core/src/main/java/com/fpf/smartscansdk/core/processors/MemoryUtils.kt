@@ -2,6 +2,7 @@ package com.fpf.smartscansdk.core.processors
 
 import android.app.ActivityManager
 import android.content.Context
+import com.fpf.smartscansdk.core.data.MemoryOptions
 
 class MemoryUtils(
     private val context: Context,
