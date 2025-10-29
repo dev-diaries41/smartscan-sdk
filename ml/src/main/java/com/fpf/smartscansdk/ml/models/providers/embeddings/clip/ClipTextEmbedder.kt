@@ -4,7 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.res.Resources
 import android.util.JsonReader
-import com.fpf.smartscansdk.core.R
+import com.fpf.smartscansdk.ml.R
 import com.fpf.smartscansdk.core.data.TextEmbeddingProvider
 import com.fpf.smartscansdk.core.embeddings.normalizeL2
 import com.fpf.smartscansdk.ml.models.OnnxModel
@@ -24,7 +24,7 @@ import java.util.*
 
 // Using ModelSource enables using with bundle model or local model which has been downloaded
 class ClipTextEmbedder(
-    context: Context,
+    private val context: Context,
     modelSource: ModelSource
 ) : TextEmbeddingProvider {
 
@@ -63,11 +63,8 @@ class ClipTextEmbedder(
         normalizeL2((output.values.first() as Array<FloatArray>)[0])
     }
 
-    override suspend fun embedBatch(data: List<String>): List<FloatArray> {
-        TODO("Not yet implemented")
-    }
 
-    suspend fun embedBatch(context: Context, texts: List<String>): List<FloatArray> {
+    override suspend fun embedBatch(data: List<String>): List<FloatArray> {
         val allEmbeddings = mutableListOf<FloatArray>()
 
         val processor = object : BatchProcessor<String, FloatArray>(application = context.applicationContext as Application) {
@@ -79,7 +76,7 @@ class ClipTextEmbedder(
             }
         }
 
-        processor.run(texts)
+        processor.run(data)
         return allEmbeddings
     }
 
