@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
 class ImageIndexer(
     private val embedder: ImageEmbeddingProvider,
     private val store: IEmbeddingStore,
-    private val bitmapMaxSize: Int = 225,
+    private val maxImageSize: Int = 225,
     context: Context,
     listener: IProcessorListener<Long, Embedding>? = null,
     options: ProcessOptions = ProcessOptions(),
@@ -39,7 +39,7 @@ class ImageIndexer(
         val contentUri = ContentUris.withAppendedId(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI, item
         )
-        val bitmap = getBitmapFromUri(context, contentUri, bitmapMaxSize)
+        val bitmap = getBitmapFromUri(context, contentUri, maxImageSize)
         val embedding = withContext(NonCancellable) {
             embedder.embed(bitmap)
         }
