@@ -8,10 +8,10 @@
 * [Installation](#installation)
 
   + [1. Install Core Module](#1-install-core-module)
-  + [2. Install Extensions Module (Optional)](#2-install-extensions-module-optional)
+  + [2. Install ML Module (Optional)](#2-install-ml-module-optional)
 * [Design Choices](#design-choices)
 
-  + [Core and Extensions](#core-and-extensions)
+  + [Core and ML](#core-and-ml)``
   + [Constraints](#constraints)
   + [Model](#model)
   + [Embedding Storage](#embedding-storage)
@@ -19,7 +19,6 @@
 
 * [Gradle / Kotlin Setup Notes](#gradle--kotlin-setup-notes)
 
-<a name="overview"></a>
 
 ## **Overview**
 
@@ -29,12 +28,10 @@ SmartScanSdk is a modular Android SDK that powers the **SmartScan app**. It prov
 * On-device ML inference
 * Semantic media indexing and search
 * Few shot classification
+* Efficient batch processing
 
-The SDK is **extensible**, allowing developers to add ML models or features without bloating the core runtime.
 
-**Long-term vision:** SmartScanSdk was designed with the goal of becoming a **C++ cross-platform SDK** for **search and classification**, capable of running both **offline on edge devices** and in **bulk cloud environments**.
-
-> **Note:** Because of its long-term cross-platform goals, some features may be experimental (extensions). However, the SDK is generally considered stable, as it is actively used in the SmartScan app, aswell as others``.
+> **Note:** The SDK is designed to be flexible, but its primary use is for the SmartScan app and other apps I am developing. It is also subject to rapid experimental changes.
 
 ---
 
@@ -43,52 +40,60 @@ The SDK is **extensible**, allowing developers to add ML models or features with
 ```
 SmartScanSdk/
  ├─ core/                                   # Essential functionality
- │   ├─ ml/                                 # On-device ML infra + models
- │   │   ├─ embeddings/                     # Generic + CLIP embeddings
- │   │   └─ models/                         # Model base + loaders
- │   ├─ processors/                         # Batch processing + pipelines
- │   └─ utils/                              # General-purpose helpers
+ │   ├─ data/                               # Data classes and processor interfaces
+ │   ├─ embeddings/                         # Embedding utilities and file-based stores
+ │   ├─ indexers/                           # Image and video indexers
+ │   ├─ media/                              # Media helpers (image/video utils)
+ │   └─ processors/                         # Batch processing and memory helpers
  │
- ├─ extensions/                             # Experimental / Optional features 
- │   ├─ embeddings/                         # File-based or custom embedding stores
- │   ├─ indexers/                           # Media indexers
- │   └─ organisers/                         # Higher-level orchestration
- │
- ├─ build.gradle  
- └─ settings.gradle  
+ └─ ml/                                     # On-device ML infrastructure + models
+     ├─ data/                               # Model loaders and data classes
+     └─ models/                             # Base ML models and providers
+         └─ providers/
+             └─ embeddings/                 # Embedding providers
+                 ├─ clip/                   # CLIP image & text embedder
+                 └─ FewShotClassifier.kt    # Few-shot classifier
+
+├─ build.gradle  
+└─ settings.gradle  
 ```
 
 **Notes:**
 
-* `core` and `extensions` are standalone Gradle modules.
+* `core` and `ml` are standalone Gradle modules.
 * Both are set up for **Maven publishing**.
+* The structure replaces the old `core` and `extensions` module in versions ≤1.0.4
 
----
+ ---
 
 ## **Installation**
 
 ### **1. Install Core Module**
 
 ```gradle
-implementation("com.github.dev-diaries41:smartscan-core:1.0.0")
+implementation("com.github.dev-diaries41.smartscan-sdk:smartscan-core:1.1.0")
 ```
 
-### **2. Install Extensions Module (Optional)**
+### **2. Install ML Module (Optional)**
 
 ```gradle
-implementation("com.github.dev-diaries41:smartscan-extensions:1.0.0")
+implementation("com.github.dev-diaries41.smartscan-sdk:smartscan-ml:1.1.0")
 ```
 
-> `extensions` depends on `core`, so including it is enough if you need both.
+> `ml` depends on `core`, so including it is enough if you need both.
 
 ---
 
 ## **Design Choices**
 
-### Core and Extensions
+### Core and ML
 
-* **core** → minimal runtime: shared interfaces, embeddings, model execution, efficient batch/concurrent processing.
-* **extensions** → implementations: indexers, retrievers, organisers, embedding stores, and other optional features.
+* **core** → minimal runtime: shared interfaces, data classes, embeddings, media helpers, processor execution, and efficient batch/concurrent processing.
+* **ml** → ML infrastructure and models: model loaders, base models, embedding providers (e.g., CLIP), and few-shot classifiers. Optional or experimental ML-related features can be added under `ml/providers`.
+
+This structure replaces the old `core` and `extensions` modules from versions 1.0.4 and below. It provides more clarity and allows consumers to use core non-ML functionality independently. For the most part, the code itself remains unchanged; only the file organization has been updated. Documentation will be updated shortly.
+
+---
 
 ### Constraints
 
@@ -107,7 +112,7 @@ Supports models stored locally or bundled in the app.
 
 ### Embedding Storage
 
-The SDK only provides a file based implementation of `IEmbeddingStore`, `FileEmbeddingStore` (in extensions) because the following benchmarks below show much better performance for the loading of embeddings
+The SDK only provides a file based implementation of `IEmbeddingStore`, `FileEmbeddingStore` (in core) because the following benchmarks below show much better performance for the loading of embeddings
 
 #### **Benchmark Summary**
 
@@ -138,13 +143,13 @@ ___
 ## **Gradle / Kotlin Setup Notes**
 
 * Java 17 / Kotlin JVM 17
-* compileSdk = 36, targetSdk = 34, minSdk = 30
-* `core` exposes `androidx.core:core-ktx` and ONNX runtime
-* `extensions` depends on `core`
-* Maven:
+* `compileSdk = 36`, `targetSdk = 34`, `minSdk = 30`
+* `core` exposes `androidx.core:core-ktx`
+* `ml` depends on `core` and ONNX Runtime
+* Maven publishing:
 
   * `groupId`: `com.github.dev-diaries41`
-  * `artifactId`: `core` or `extensions`
+  * `artifactId`: `core` or `ml`
   * `version`: configurable (`publishVersion`, default `1.0.0`)
-
----
+  
+ ---

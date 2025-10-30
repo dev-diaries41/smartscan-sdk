@@ -25,4 +25,4 @@ plugins{
 }
 
 rootProject.name = "SmartScanSdk"
-include(":core", ":extensions")
+include(":ml", ":core")
