@@ -14,7 +14,7 @@
 ### Removed
 
 * `Organiser` class removed.
-``
+
 ### Notes
 This release replaces the old `core` and `extensions` structure.  
 If you are upgrading from ≤1.0.4, update imports and Gradle dependencies.
