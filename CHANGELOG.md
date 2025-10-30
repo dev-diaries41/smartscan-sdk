@@ -1,3 +1,25 @@
+### v1.1.0 - 30/10/2025
+
+### Changed
+* Project structure refactored from **core + extensions** to **core + ml**.
+* Imports updated accordingly:
+  - **core** → minimal runtime: shared interfaces, data classes, embeddings, media helpers, processor execution, and efficient batch/concurrent processing.
+  - **ml** → ML infrastructure and models: model loaders, base models, embedding providers (e.g., CLIP), and few-shot classifiers. Optional or experimental ML-related features can be added under `ml/providers`.
+  - Both modules organize contracts and data classes under their own `data/` packages.
+
+* All `IEmbeddingProviders` must now implement `embedBatch`
+* `ClipImageEmbedder` and `ClipTextEmbedder` now accept context instead of resources
+* `BatchProcessor` now accepts a `Context` (uses `applicationContext` internally).
+
+### Removed
+
+* `Organiser` class removed.
+``
+### Notes
+This release replaces the old `core` and `extensions` structure.  
+If you are upgrading from ≤1.0.4, update imports and Gradle dependencies.
+
+
 ## v1.0.4 – 19/10/2025
 
 ### Changed
