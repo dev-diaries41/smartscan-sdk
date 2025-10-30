@@ -3,12 +3,11 @@
 ## Table of Contents
 
 ### Core
-- [ML / Embeddings](core/ml/embeddings.md)
-- [ML / Models](core/ml/models.md)
+- [Embeddings](core/embeddings.md)
+- [Indexers](core/indexers.md)
 - [Processors](core/processors.md)
-- [Utils](core/utils.md)
+- [Utils](core/media.md)
 
-### Extensions
-- [Embeddings](extensions/embeddings.md)
-- [Indexers](extensions/indexers.md)
-- [Organisers](extensions/organiser.md)
+### ML``
+- [ML / Providers](ml/providers.md)
+- [ML / Models](ml/models.md)
