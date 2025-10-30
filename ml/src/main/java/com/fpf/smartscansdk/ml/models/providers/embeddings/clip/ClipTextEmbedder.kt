@@ -50,8 +50,9 @@ class ClipTextEmbedder(
         if (!isInitialized()) throw IllegalStateException("Model not initialized")
 
         val clean = Regex("[^A-Za-z0-9 ]").replace(data, "").lowercase()
-        var tokens = mutableListOf(tokenBOS) + tokenizer.encode(clean) + tokenEOS
-        tokens = tokens.take(77) + List(77 - tokens.size) { 0 }
+        var tokens = (mutableListOf(tokenBOS) + tokenizer.encode(clean) + tokenEOS).take(77).toMutableList()
+        if (tokens.size < 77) tokens += List(77 - tokens.size) { 0 }
+
 
         val inputIds = LongBuffer.allocate(1 * 77).apply {
             tokens.forEach { put(it.toLong()) }

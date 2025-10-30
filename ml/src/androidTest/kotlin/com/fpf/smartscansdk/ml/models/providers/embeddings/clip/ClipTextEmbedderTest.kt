@@ -115,4 +115,28 @@ class ClipTextEmbedderInstrumentedTest {
 
         verify(exactly = 1) { (mockModel as AutoCloseable).close() }
     }
+
+    @Test
+    fun `embed handles strings longer than 77 tokens`() = runBlocking {
+        val embedder = ClipTextEmbedder(context, ResourceId(0))
+        val mockModel = mockk<OnnxModel>(relaxed = true)
+        every { mockModel.isLoaded() } returns true
+        every { mockModel.getInputNames() } returns listOf("input")
+        every { mockModel.getEnv() } returns mockk<OrtEnvironment>()
+
+        val raw = Array(1) { FloatArray(embedder.embeddingDim) { 1.0f } }
+        every { mockModel.run(any<Map<String, TensorData>>()) } returns mapOf("out" to raw)
+
+        val field = embedder::class.java.getDeclaredField("model")
+        field.isAccessible = true
+        field.set(embedder, mockModel)
+
+        val longText = "a".repeat(2000)
+        val embedding = embedder.embed(longText)
+
+        assertEquals(embedder.embeddingDim, embedding.size)
+        val l2 = sqrt(embedding.map { it * it }.sum())
+        assertTrue(abs(l2 - 1.0f) < 1e-3)
+    }
+
 }
