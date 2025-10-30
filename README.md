@@ -62,7 +62,7 @@ SmartScanSdk/
 
 * `core` and `ml` are standalone Gradle modules.
 * Both are set up for **Maven publishing**.
-* The structure replaces the old `core` and `extensions` module in versions 1.0.4 and below
+* The structure replaces the old `core` and `extensions` module in versions ≤1.0.4
 
  ---
 
@@ -71,13 +71,13 @@ SmartScanSdk/
 ### **1. Install Core Module**
 
 ```gradle
-implementation("com.github.dev-diaries41:smartscan-core:1.0.0")
+implementation("com.github.dev-diaries41.smartscan-sdk:smartscan-core:1.1.0")
 ```
 
 ### **2. Install ML Module (Optional)**
 
 ```gradle
-implementation("com.github.dev-diaries41:smartscan-ml:1.0.0")
+implementation("com.github.dev-diaries41.smartscan-sdk:smartscan-ml:1.1.0")
 ```
 
 > `ml` depends on `core`, so including it is enough if you need both.
