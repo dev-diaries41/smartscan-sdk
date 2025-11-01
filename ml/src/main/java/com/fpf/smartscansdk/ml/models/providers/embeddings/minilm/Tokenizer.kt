@@ -7,17 +7,18 @@ import org.json.JSONObject
 import java.io.InputStreamReader
 import kotlin.collections.toLongArray
 
-class SimpleTokenizer(private val vocab: Map<String, Int>,
-private val maxLen: Int,
-private val doLowerCase: Boolean,
-private val unkToken: String,
-private val clsToken: String,
-private val sepToken: String,
-private val padToken: String) {
+class SimpleTokenizer(
+    private val vocab: Map<String, Int>,
+    private val maxLen: Int,
+    private val doLowerCase: Boolean,
+    private val unkToken: String,
+    private val clsToken: String,
+    private val sepToken: String,
+    private val padToken: String
+) {
 
     companion object {
-        suspend fun fromRawResources(context: Context, vocabResId: Int, configResId: Int): SimpleTokenizer =
-            withContext(Dispatchers.IO) {
+         fun fromRawResources(context: Context, vocabResId: Int, configResId: Int): SimpleTokenizer {
                 // Load vocab
                 val vocabMap: Map<String, Int> = context.resources.openRawResource(vocabResId)
                     .bufferedReader()
@@ -30,7 +31,7 @@ private val padToken: String) {
                 }
                 val configJson = JSONObject(configText)
 
-                SimpleTokenizer(
+                return SimpleTokenizer(
                     vocab = vocabMap,
                     maxLen = configJson.optInt("max_length", 128),
                     doLowerCase = configJson.optBoolean("do_lower_case", true),
