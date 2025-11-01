@@ -29,7 +29,7 @@ class MiniLMTextEmbedder(
     private var closed = false
     override val embeddingDim: Int = 384 // MiniLM-L6-v2 dimension
 
-    suspend fun initialize() = coroutineScope {
+    suspend fun initialize()  {
         tokenizer = SimpleTokenizer.fromRawResources(context, R.raw.minilm_vocab,  R.raw.minilm_tokenizer_config)
         model.loadModel()
     }
