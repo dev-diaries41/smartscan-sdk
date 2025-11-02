@@ -26,48 +26,6 @@ Represents an aggregated, class-level embedding used for few-shot classification
 
 ---
 
-### `IEmbeddingStore`
-
-Interface for storing embeddings persistently.
-
-| Property / Method                     | Description                                            |
-| ------------------------------------- | ------------------------------------------------------ |
-| `exists`                              | Returns true if the store exists                       |
-| `isCached`                            | Indicates if embeddings are currently cached in memory |
-| `add(newEmbeddings: List<Embedding>)` | Adds new embeddings to the store                       |
-| `remove(ids: List<Long>)`             | Removes embeddings by ID                               |
-| `get()`                               | Returns all stored embeddings                          |
-| `clear()`                             | Clears the in-memory cache (does not delete the store) |
-
----
-
-### `IRetriever`
-
-Interface for querying embeddings.
-
-| Method                                                      | Description                                                                      |
-| ----------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `query(embedding: FloatArray, topK: Int, threshold: Float)` | Returns the top-K embeddings most similar to the input that exceed the threshold |
-
----
-
-### `IEmbeddingProvider<T>`
-
-Generic interface for generating embeddings from data.
-
-| Property / Method           | Description                               |
-| --------------------------- | ----------------------------------------- |
-| `embeddingDim`              | Dimensionality of the embeddings produced |
-| `closeSession()`            | cleanup method                   |
-| `embed(data: T)`            | Produces an embedding for a single item   |
-| `embedBatch(data: List<T>)` | Produces embeddings for a batch of items  |
-
-**Type Aliases:**
-
-* `TextEmbeddingProvider = IEmbeddingProvider<String>`
-* `ImageEmbeddingProvider = IEmbeddingProvider<Bitmap>`
-
----
 
 ## Classification Data Types
 
