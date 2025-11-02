@@ -2,7 +2,6 @@ package com.fpf.smartscansdk.core.processors
 
 import android.content.Context
 import android.util.Log
-import com.fpf.smartscansdk.core.data.IProcessorListener
 import com.fpf.smartscansdk.core.data.Metrics
 import com.fpf.smartscansdk.core.data.ProcessOptions
 import io.mockk.coVerify
