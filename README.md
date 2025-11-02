@@ -93,15 +93,13 @@ val embeddings = imageEmbedder.embedBatch(images)
 
 ### Indexing
 
-To get started with indexing media quickly, you can use the provided `ImageIndex` and `VideoIndexer` classes as shown below. You can optionally create your own indexers (including for text related data) by implementing the `BatchProcessor` interface. 
-
-**Important**: During indexing the MediaStore Id is used to as the id in the `Embedding` which is stored. This can later be used for retrieval.
-
-See docs for more details.
+To get started with indexing media quickly, you can use the provided `ImageIndex` and `VideoIndexer` classes as shown below. You can optionally create your own indexers (including for text related data) by implementing the `BatchProcessor` interface. See docs for more details.
 
 #### Image Indexing
 
 Index images to enable similarity search. The index is saved as a binary file and managed with a FileEmbeddingStore.
+> **Important**: During indexing the MediaStore Id is used to as the id in the `Embedding` which is stored. This can later be used for retrieval.
+
 
 ```kotlin
 val imageEmbedder = ClipImageEmbedder(context, ResourceId(R.raw.image_encoder_quant_int8))
