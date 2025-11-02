@@ -2,7 +2,7 @@ package com.fpf.smartscansdk.ml.models.providers.embeddings.minilm
 
 import android.app.Application
 import android.content.Context
-import com.fpf.smartscansdk.core.data.TextEmbeddingProvider
+import com.fpf.smartscansdk.core.embeddings.TextEmbeddingProvider
 import com.fpf.smartscansdk.core.embeddings.normalizeL2
 import com.fpf.smartscansdk.ml.models.OnnxModel
 import com.fpf.smartscansdk.ml.models.FileOnnxLoader

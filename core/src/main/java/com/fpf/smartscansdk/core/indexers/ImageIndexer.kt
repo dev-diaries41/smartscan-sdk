@@ -4,12 +4,12 @@ import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
 import com.fpf.smartscansdk.core.data.Embedding
-import com.fpf.smartscansdk.core.data.IEmbeddingStore
-import com.fpf.smartscansdk.core.data.IProcessorListener
-import com.fpf.smartscansdk.core.data.ImageEmbeddingProvider
 import com.fpf.smartscansdk.core.data.ProcessOptions
+import com.fpf.smartscansdk.core.embeddings.IEmbeddingStore
+import com.fpf.smartscansdk.core.embeddings.ImageEmbeddingProvider
 import com.fpf.smartscansdk.core.media.getBitmapFromUri
 import com.fpf.smartscansdk.core.processors.BatchProcessor
+import com.fpf.smartscansdk.core.processors.IProcessorListener
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
