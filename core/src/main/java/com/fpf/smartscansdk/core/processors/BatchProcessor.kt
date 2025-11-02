@@ -1,9 +1,7 @@
 package com.fpf.smartscansdk.core.processors
 
-import android.app.Application
 import android.content.Context
 import android.util.Log
-import com.fpf.smartscansdk.core.data.IProcessorListener
 import com.fpf.smartscansdk.core.data.Metrics
 import com.fpf.smartscansdk.core.data.ProcessOptions
 import kotlinx.coroutines.CancellationException
