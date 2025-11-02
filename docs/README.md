@@ -8,6 +8,6 @@
 - [Processors](core/processors.md)
 - [Utils](core/media.md)
 
-### ML``
+### ML
 - [ML / Providers](ml/providers.md)
 - [ML / Models](ml/models.md)

@@ -11,7 +11,7 @@
   + [2. Install ML Module (Optional)](#2-install-ml-module-optional)
 * [Design Choices](#design-choices)
 
-  + [Core and ML](#core-and-ml)``
+  + [Core and ML](#core-and-ml)
   + [Constraints](#constraints)
   + [Model](#model)
   + [Embedding Storage](#embedding-storage)
