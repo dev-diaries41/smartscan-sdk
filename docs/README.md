@@ -1,4 +1,4 @@
-# SmartScanSdk Docs
+# Documentation
 
 ## Table of Contents
 

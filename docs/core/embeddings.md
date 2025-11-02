@@ -1,8 +1,44 @@
 # Embeddings
 
-## FileEmbeddingStore
 
-Persistent storage for embeddings in a binary file. Provides a high-performance, file-backed storage and retrieval mechanism, optimized for on-device vector search.
+## `IEmbeddingProvider<T>`
+
+Generic interface for generating embeddings from data.
+
+| Property / Method           | Description                               |
+| --------------------------- | ----------------------------------------- |
+| `embeddingDim`              | Dimensionality of the embeddings produced |
+| `closeSession()`            | cleanup method                   |
+| `embed(data: T)`            | Produces an embedding for a single item   |
+| `embedBatch(data: List<T>)` | Produces embeddings for a batch of items  |
+
+**Type Aliases:**
+
+* `TextEmbeddingProvider = IEmbeddingProvider<String>`
+* `ImageEmbeddingProvider = IEmbeddingProvider<Bitmap>`
+
+---
+
+## Embedding Stores
+
+### `IEmbeddingStore`
+
+Interface for storing embeddings persistently.
+
+| Property / Method                     | Description                                            |
+| ------------------------------------- | ------------------------------------------------------ |
+| `exists`                              | Returns true if the store exists                       |
+| `isCached`                            | Indicates if embeddings are currently cached in memory |
+| `add(newEmbeddings: List<Embedding>)` | Adds new embeddings to the store                       |
+| `remove(ids: List<Long>)`             | Removes embeddings by ID                               |
+| `get()`                               | Returns all stored embeddings                          |
+| `clear()`                             | Clears the in-memory cache (does not delete the store) |
+
+---
+
+### FileEmbeddingStore
+
+Persistent storage for embeddings in a binary file, which implements IEmbeddingStore. Provides a high-performance, file-backed storage and retrieval mechanism, optimized for on-device vector search.
 
 Key features:
 
@@ -81,7 +117,19 @@ store.remove(listOf(embedding1.id))
 
 ---
 
-## FileEmbeddingRetriever
+## Retrievers
+
+### `IRetriever`
+
+Interface for querying embeddings.
+
+| Method                                                      | Description                                                                      |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `query(embedding: FloatArray, topK: Int, threshold: Float)` | Returns the top-K embeddings most similar to the input that exceed the threshold |
+
+---
+
+### FileEmbeddingRetriever
 
 Retriever for nearest-neighbor queries over a `FileEmbeddingStore`.
 

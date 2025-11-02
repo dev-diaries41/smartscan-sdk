@@ -1,14 +1,4 @@
-# Core Data Types
-
-## `IModelLoader<T>`
-
-Interface for loading model data.
-
-| Method   | Type      | Description                    |
-| -------- | --------- | ------------------------------ |
-| `load()` | `suspend` | Returns model data of type `T` |
-
----
+# ML Data Types
 
 ## `ModelSource`
 
