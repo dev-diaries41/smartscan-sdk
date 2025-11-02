@@ -37,7 +37,7 @@ interface IRetriever {
 
 
 interface IEmbeddingProvider<T> {
-    val embeddingDim: Int? get() = null
+    val embeddingDim: Int
     fun closeSession() = Unit
     suspend fun embed(data: T): FloatArray
     suspend fun embedBatch(data: List<T>): List<FloatArray>
