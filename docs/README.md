@@ -3,11 +3,13 @@
 ## Table of Contents
 
 ### Core
+- [Data](core/data.md)
 - [Embeddings](core/embeddings.md)
 - [Indexers](core/indexers.md)
 - [Processors](core/processors.md)
-- [Utils](core/media.md)
+- [Media](core/media.md)
 
 ### ML
-- [ML / Providers](ml/providers.md)
-- [ML / Models](ml/models.md)
+- [Data](ml/data.md)
+- [Providers](ml/providers.md)
+- [Models](ml/models.md)
