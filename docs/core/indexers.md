@@ -6,17 +6,15 @@ Provides batched, on-device indexing of media content (images and videos) into e
 
 Key features:
 
-* Leverages `ClipImageEmbedder` for generating embeddings.
 * Processes media in batches using `BatchProcessor`.
-* Stores embeddings in `IEmbeddingStore` for fast, in-memory access.
 * Supports optional progress and lifecycle callbacks via `IProcessorListener`.
 * Optimized for on-device performance with memory-mapped file stores.
 
 **Design constraints:**
 
 * Full embedding index must be loaded in memory for efficient vector search.
-* File-based `EmbeddingStore` is preferred over Room due to 30–50× faster index loading.
-* Video frame extraction may fail for some codecs; callers should handle exceptions.
+* File-based `IEmbeddingStore` is preferred over Room due to up to 100× faster index loading.
+* For the `VideoIndexer` video frame extraction may fail for some codecs; callers should handle exceptions.
 
 ---
 
@@ -26,13 +24,13 @@ Processes images from the device `MediaStore` and generates embeddings.
 
 ### **Constructor**
 
-| Parameter     | Type                                   | Description                              |
-| ------------- | -------------------------------------- | ---------------------------------------- |
-| `embedder`    | `ClipImageEmbedder`                    | Embedder for generating image embeddings |
-| `application` | `Application`                          | Application context for batch processing |
-| `listener`    | `IProcessorListener<Long, Embedding>?` | Optional processor listener              |
-| `options`     | `ProcessOptions`                       | Configurable batch and memory options    |
-| `store`       | `IEmbeddingStore`                      | Storage for generated embeddings         |
+| Parameter  | Type                                   | Description                           |
+|------------|----------------------------------------| ------------------------------------- |
+| `embedder` | `ImageEmbeddingProvider`               | Embedder for generating image embeddings |
+| `context`  | `Context`                              | Context|
+| `listener` | `IProcessorListener<Long, Embedding>?` | Optional processor listener           |
+| `options`  | `ProcessOptions`                       | Configurable batch and memory options |
+| `store`    | `IEmbeddingStore`                      | Storage for generated embeddings      |
 
 ---
 
@@ -40,7 +38,7 @@ Processes images from the device `MediaStore` and generates embeddings.
 
 | Method                            | Description                                                                                                                               |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `onProcess(context, id)`          | Loads the image with the given MediaStore ID, generates a bitmap, embeds it using `ClipImageEmbedder`, and returns an `Embedding` object. |
+| `onProcess(context, id)`          | Loads the image with the given MediaStore ID, generates a bitmap, embeds it using `ImageEmbeddingProvider`, and returns an `Embedding` object. |
 | `onBatchComplete(context, batch)` | Persists the batch of embeddings to `IEmbeddingStore`.                                                                                    |
 
 ---
@@ -48,14 +46,11 @@ Processes images from the device `MediaStore` and generates embeddings.
 ### **Usage Example**
 
 ```kotlin
-val imageIndexer = ImageIndexer(
-    embedder = clipImageEmbedder,
-    application = app,
-    store = fileEmbeddingStore
-)
-
-val mediaIds = listOf<Long>(123, 456, 789)
-val metrics = imageIndexer.run(mediaIds)
+val imageEmbedder = ClipImageEmbedder(context, ResourceId(R.raw.image_encoder_quant_int8))
+val imageStore = FileEmbeddingStore(File(context.filesDir, "image_index.bin"), imageEmbedder.embeddingDim, useCache = false) // cache not needed for indexing
+val imageIndexer = ImageIndexer(imageEmbedder, context=context, listener = null, store = imageStore) //optionally pass a listener to handle events
+val ids = getImageIds() // placeholder function to get MediaStore image ids
+val metrics = imageIndexer.run(ids)
 println("Indexed ${metrics.totalProcessed} images in ${metrics.timeElapsed}ms")
 ```
 
@@ -67,16 +62,16 @@ Processes videos from the device `MediaStore`, extracts frames, generates embedd
 
 ### **Constructor**
 
-| Parameter     | Type                                   | Description                                                  |
-| ------------- | -------------------------------------- | ------------------------------------------------------------ |
-| `embedder`    | `ClipImageEmbedder`                    | Embedder for generating embeddings from video frames         |
-| `frameCount`  | `Int`                                  | Number of frames to extract per video (default: 10)          |
-| `width`       | `Int`                                  | Width to resize frames (default: `ClipConfig.IMAGE_SIZE_X`)  |
-| `height`      | `Int`                                  | Height to resize frames (default: `ClipConfig.IMAGE_SIZE_Y`) |
-| `application` | `Application`                          | Application context for batch processing                     |
-| `listener`    | `IProcessorListener<Long, Embedding>?` | Optional processor listener                                  |
-| `options`     | `ProcessOptions`                       | Configurable batch and memory options                        |
-| `store`       | `IEmbeddingStore`                      | Storage for generated embeddings                             |
+| Parameter    | Type                                   | Description                                                  |
+|--------------|----------------------------------------| ------------------------------------------------------------ |
+| `embedder`   | `ImageEmbeddingProvider`               | Embedder for generating embeddings from video frames         |
+| `frameCount` | `Int`                                  | Number of frames to extract per video (default: 10)          |
+| `width`      | `Int`                                  | Width to resize frames   |
+| `height`     | `Int`                                  | Height to resize frames  |
+| `context`    | `Context`                              | Context                     |
+| `listener`   | `IProcessorListener<Long, Embedding>?` | Optional processor listener                                  |
+| `options`    | `ProcessOptions`                       | Configurable batch and memory options                        |
+| `store`      | `IEmbeddingStore`                      | Storage for generated embeddings                             |
 
 ---
 
@@ -92,14 +87,10 @@ Processes videos from the device `MediaStore`, extracts frames, generates embedd
 ### **Usage Example**
 
 ```kotlin
-val videoIndexer = VideoIndexer(
-    embedder = clipImageEmbedder,
-    frameCount = 10,
-    store = fileEmbeddingStore,
-    application = app
-)
-
-val videoIds = listOf<Long>(101, 102, 103)
+val imageEmbedder = ClipImageEmbedder(context, ResourceId(R.raw.image_encoder_quant_int8))
+val videoStore = FileEmbeddingStore(File(context.filesDir,  "video_index.bin"), imageEmbedder.embeddingDim, useCache = false )
+val videoIndexer = VideoIndexer(imageEmbedder, context=context, listener = null, store = videoStore, width = ClipConfig.IMAGE_SIZE_X, height = ClipConfig.IMAGE_SIZE_Y)
+val ids = getVideoIds() // placeholder function to get MediaStore video ids
 val metrics = videoIndexer.run(videoIds)
 println("Indexed ${metrics.totalProcessed} videos in ${metrics.timeElapsed}ms")
 ```
