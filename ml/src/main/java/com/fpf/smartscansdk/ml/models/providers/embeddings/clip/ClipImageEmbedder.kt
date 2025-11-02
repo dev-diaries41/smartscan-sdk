@@ -3,7 +3,7 @@ package com.fpf.smartscansdk.ml.models.providers.embeddings.clip
 import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
-import com.fpf.smartscansdk.core.data.ImageEmbeddingProvider
+import com.fpf.smartscansdk.core.embeddings.ImageEmbeddingProvider
 import com.fpf.smartscansdk.core.embeddings.normalizeL2
 import com.fpf.smartscansdk.core.processors.BatchProcessor
 import com.fpf.smartscansdk.ml.data.FilePath
