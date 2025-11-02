@@ -24,6 +24,11 @@
 * `ClipImageEmbedder` and `ClipTextEmbedder` now accept context instead of resources
 * `BatchProcessor` now accepts a `Context` (uses `applicationContext` internally).
 
+### Fixed 
+
+* fix `ClipTextEmbedder`: prevent IllegalCapacity in embed
+
+
 ### Removed
 
 * `Organiser` class removed.
