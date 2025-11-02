@@ -1,4 +1,4 @@
-# **SmartScanSdk**
+# **SmartScan SDK**
 
 ## Table of Contents
 
@@ -186,6 +186,18 @@ SmartScanSdk/
  ---
 
 ## Installation
+
+Add the JitPack repository to your build file (settings.gradle)
+
+```gradle
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
 
 ### **1. Install Core Module**
 
