@@ -33,7 +33,18 @@ Abstract base class for ML models in the SDK.
 
 ---
 
-### Model Loaders
+## Model Loaders
+
+### `IModelLoader<T>`
+
+Interface for loading model data.
+
+| Method   | Type      | Description                    |
+| -------- | --------- | ------------------------------ |
+| `load()` | `suspend` | Returns model data of type `T` |
+
+
+### Implementations
 
 | Class                | Description                                   |
 | -------------------- | --------------------------------------------- |
