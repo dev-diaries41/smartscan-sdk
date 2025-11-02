@@ -1,0 +1,12 @@
+package com.fpf.smartscansdk.core.embeddings
+
+import com.fpf.smartscansdk.core.data.Embedding
+
+interface IEmbeddingStore {
+    val isCached: Boolean
+    val exists: Boolean
+    suspend fun add(newEmbeddings: List<Embedding>)
+    suspend fun remove(ids: List<Long>)
+    suspend fun get(): List<Embedding>
+    fun clear()
+}

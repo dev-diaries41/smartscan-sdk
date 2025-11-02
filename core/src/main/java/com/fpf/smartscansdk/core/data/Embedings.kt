@@ -1,8 +1,6 @@
 package com.fpf.smartscansdk.core.data
 
 
-import android.graphics.Bitmap
-
 // `Embedding` represents a raw vector for a single media item, with `id` corresponding to its `MediaStoreId`.
 data class Embedding(
     val id: Long,
@@ -18,33 +16,5 @@ data class PrototypeEmbedding(
 )
 
 
-interface IEmbeddingStore {
-    val isCached: Boolean
-    val exists: Boolean
-    suspend fun add(newEmbeddings: List<Embedding>)
-    suspend fun remove(ids: List<Long>)
-    suspend fun get(): List<Embedding>
-    fun clear()
-}
-
-interface IRetriever {
-    suspend fun query(
-        embedding: FloatArray,
-        topK: Int,
-        threshold: Float
-    ): List<Embedding>
-}
-
-
-interface IEmbeddingProvider<T> {
-    val embeddingDim: Int? get() = null
-    fun closeSession() = Unit
-    suspend fun embed(data: T): FloatArray
-    suspend fun embedBatch(data: List<T>): List<FloatArray>
-}
-
-
-typealias TextEmbeddingProvider = IEmbeddingProvider<String>
-typealias ImageEmbeddingProvider = IEmbeddingProvider<Bitmap>
 
 

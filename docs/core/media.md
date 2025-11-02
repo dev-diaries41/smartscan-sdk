@@ -1,10 +1,10 @@
-# **Utils**
+# Media
 
 A collection of image and video processing utilities used across the SDK.
 
 ---
 
-## **ImageUtils**
+## ImageUtils
 
 Provides helper functions for image scaling, cropping, and loading from URIs.
 
@@ -55,7 +55,7 @@ Loads a bitmap from a content `Uri`, automatically scaling it so the largest sid
 
 ---
 
-## **VideoUtils**
+## VideoUtils
 
 Provides helper functions for extracting frames from video files.
 

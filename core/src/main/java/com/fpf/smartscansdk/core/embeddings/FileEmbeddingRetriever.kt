@@ -1,7 +1,6 @@
 package com.fpf.smartscansdk.core.embeddings
 
 import com.fpf.smartscansdk.core.data.Embedding
-import com.fpf.smartscansdk.core.data.IRetriever
 
 class FileEmbeddingRetriever(
     private val store: FileEmbeddingStore

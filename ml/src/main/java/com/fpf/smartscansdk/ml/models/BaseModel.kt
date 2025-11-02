@@ -1,6 +1,5 @@
 package com.fpf.smartscansdk.ml.models
 
-import com.fpf.smartscansdk.ml.data.IModelLoader
 
 abstract class BaseModel<InputTensor> : AutoCloseable {
     protected abstract val loader: IModelLoader<*> // hidden implementation detail

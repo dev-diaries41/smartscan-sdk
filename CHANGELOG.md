@@ -1,3 +1,16 @@
+### v1.1.1 - 02/11/2025
+
+### Added
+* Added new text embedding provider, Mini-LM
+
+### Changed
+* IEmbeddingProvider is require to provider `embeddingDim` variable (used to be optional)
+* Renamed `embeddingLength` to `embeddingDim` for `FileEmbeddingStore` constructor param
+* Move interfaces:
+  - Moved to core/embeddings: `IEmbeddingStore`, `IRetriever`, `IEmbeddingProvider`
+  - Moved to core/processor: `IProcessorListener`
+  - Moved to ml/models: `IModelLoader`
+
 ### v1.1.0 - 30/10/2025
 
 ### Changed

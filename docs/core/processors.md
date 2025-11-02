@@ -12,55 +12,8 @@ Supports:
 
 This module is ideal for tasks like embedding generation, model inference, or any other repeated computation on large datasets.
 
----
-
-## **Core Data Types**
-
-### `Metrics`
-
-Encapsulates processing results.
-
-| Type      | Properties                                                                 | Description                                                        |
-|-----------|----------------------------------------------------------------------------|--------------------------------------------------------------------|
-| `Success` | `totalProcessed: Int`<br>`timeElapsed: Long`                               | Number of items processed and total duration                       |
-| `Failure` | `processedBeforeFailure: Int`<br>`timeElapsed: Long`<br>`error: Exception` | Number of items processed before failure, duration, and error info |
-
----
-
-### `MemoryOptions`
-
-Configuration for memory-aware processing.
-
-| Property              | Type | Description                               |
-|-----------------------|------|-------------------------------------------|
-| `lowMemoryThreshold`  | Long | Memory level (in bytes) considered "low"  |
-| `highMemoryThreshold` | Long | Memory level (in bytes) considered "high" |
-| `minConcurrency`      | Int  | Minimum concurrency allowed               |
-| `maxConcurrency`      | Int  | Maximum concurrency allowed               |
-
-**Usage:** Controls the number of items processed concurrently based on available system memory. Works with `MemoryUtils` to dynamically calculate optimal concurrency.
-
----
-
-### `MemoryUtils`
-
-Utility for memory-aware operations.
-
-**Key Methods:**
-
-* `getFreeMemory()`: Returns the current free memory in bytes.
-* `calculateConcurrencyLevel()`: Returns an optimal concurrency level based on available memory and `MemoryOptions`.
-
----
-
-### `ProcessOptions`
-
-Configuration for processor execution.
-
-| Property    | Type            | Description                          |
-|-------------|-----------------|--------------------------------------|
-| `memory`    | `MemoryOptions` | Memory constraints for processing    |
-| `batchSize` | `Int`           | Number of items to process per batch |
+> **Core Data Types**
+> This module uses data types from the `data` package such as `Metrics`, `MemoryOptions`, and `ProcessOptions`. See the [Data Package Documentation](/docs/core/data.md) for details.
 
 ---
 
@@ -84,21 +37,21 @@ Interface for receiving processor lifecycle callbacks.
 
 ---
 
-## **BatchProcessor**
+## BatchProcessor
 
 Abstract base class for batched, asynchronous processing of items.
 
-### **Properties**
+### Properties
 
-| Property      | Type                                 | Description                             |
-|---------------|--------------------------------------|-----------------------------------------|
-| `application` | `Application`                        | Provides context for processing tasks   |
-| `listener`    | `IProcessorListener<Input, Output>?` | Optional callback listener              |
-| `options`     | `ProcessOptions`                     | Configures batch size and memory limits |
+| Property   | Type                                 | Description                             |
+|------------|--------------------------------------|-----------------------------------------|
+| `context`  | `Context`                            | Provides context for processing tasks   |
+| `listener` | `IProcessorListener<Input, Output>?` | Optional callback listener              |
+| `options`  | `ProcessOptions`                     | Configures batch size and memory limits |
 
 ---
 
-### **Methods**
+### Methods
 
 | Method                            | Description                                                                                                                                                    |
 |-----------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -108,7 +61,7 @@ Abstract base class for batched, asynchronous processing of items.
 
 ---
 
-### **Behavior**
+### Behavior
 
 1. Splits items into batches of `options.batchSize`.
 2. Calculates optimal concurrency per batch based on `MemoryOptions`.
@@ -122,7 +75,7 @@ Abstract base class for batched, asynchronous processing of items.
 ### **Usage Example**
 
 ```kotlin
-class MyProcessor(application: Application) : BatchProcessor<String, Int>(application) {
+class MyProcessor(context: Context) : BatchProcessor<String, Int>(context) {
     override suspend fun onProcess(context: Context, item: String): Int {
         // Convert string to its length
         return item.length
@@ -133,7 +86,7 @@ class MyProcessor(application: Application) : BatchProcessor<String, Int>(applic
     }
 }
 
-val processor = MyProcessor(app)
+val processor = MyProcessor(context)
 val items = listOf("apple", "banana", "cherry")
 val metrics = processor.run(items)
 println("Processed ${metrics.totalProcessed} items in ${metrics.timeElapsed}ms")
@@ -141,7 +94,7 @@ println("Processed ${metrics.totalProcessed} items in ${metrics.timeElapsed}ms")
 
 ---
 
-### **Extending**
+### Extending
 
 To implement a custom processor:
 
