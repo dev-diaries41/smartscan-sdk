@@ -2,7 +2,6 @@ package com.fpf.smartscansdk.ml.models
 
 import android.content.res.Resources
 import androidx.annotation.RawRes
-import com.fpf.smartscansdk.ml.data.IModelLoader
 import java.io.File
 
 class FileOnnxLoader(private val path: String) : IModelLoader<ByteArray> {
