@@ -42,9 +42,9 @@ class ClipTextEmbedder(
     override val embeddingDim: Int = 512
     private var closed = false
 
-    suspend fun initialize() = model.loadModel()
+    override suspend fun initialize() = model.loadModel()
 
-    fun isInitialized() = model.isLoaded()
+    override fun isInitialized() = model.isLoaded()
 
     override suspend fun embed(data: String): FloatArray = withContext(Dispatchers.Default) {
         if (!isInitialized()) throw IllegalStateException("Model not initialized")

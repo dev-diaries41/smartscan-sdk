@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 
 interface IEmbeddingProvider<T> {
     val embeddingDim: Int
+    suspend fun initialize()
+    fun isInitialized(): Boolean
     fun closeSession() = Unit
     suspend fun embed(data: T): FloatArray
     suspend fun embedBatch(data: List<T>): List<FloatArray>
