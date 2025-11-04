@@ -29,15 +29,15 @@ class ClipImageEmbedder(
     override val embeddingDim: Int = 512
     private var closed = false
 
-    suspend fun initialize() = model.loadModel()
+    override suspend fun initialize() = model.loadModel()
 
-    fun isInitialized() = model.isLoaded()
+    override fun isInitialized() = model.isLoaded()
 
-    override suspend fun embed(bitmap: Bitmap): FloatArray = withContext(Dispatchers.Default) {
+    override suspend fun embed(data: Bitmap): FloatArray = withContext(Dispatchers.Default) {
         if (!isInitialized()) throw IllegalStateException("Model not initialized")
 
         val inputShape = longArrayOf(ClipConfig.DIM_BATCH_SIZE.toLong(), ClipConfig.DIM_PIXEL_SIZE.toLong(), ClipConfig.IMAGE_SIZE_X.toLong(), ClipConfig.IMAGE_SIZE_Y.toLong())
-        val imgData: FloatBuffer = preProcess(bitmap)
+        val imgData: FloatBuffer = preProcess(data)
         val inputName = model.getInputNames()?.firstOrNull() ?: throw IllegalStateException("Model inputs not available")
         val output = model.run(mapOf(inputName to TensorData.FloatBufferTensor(imgData, inputShape)))
         normalizeL2((output.values.first() as Array<FloatArray>)[0])

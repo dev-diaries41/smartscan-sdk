@@ -1,7 +1,9 @@
-### v1.1.1 - 02/11/2025
+### v1.1.1 - 04/11/2025
 
 ### Added
 * Added new text embedding provider, Mini-LM
+*  Add `initialized` and `isInitialized` to `IEmbeddingProvider`"
+
 
 ### Changed
 * IEmbeddingProvider is require to provider `embeddingDim` variable (used to be optional)

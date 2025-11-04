@@ -29,11 +29,11 @@ class MiniLMTextEmbedder(
     private var closed = false
     override val embeddingDim: Int = 384 // MiniLM-L6-v2 dimension
 
-    suspend fun initialize()  {
+    override suspend fun initialize()  {
         model.loadModel()
     }
 
-    fun isInitialized() = model.isLoaded()
+    override fun isInitialized() = model.isLoaded()
 
     override suspend fun embed(data: String): FloatArray = withContext(Dispatchers.Default) {
         if (!isInitialized()) throw IllegalStateException("Model not initialized")
