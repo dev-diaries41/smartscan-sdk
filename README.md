@@ -277,10 +277,5 @@ ___
 * `compileSdk = 36`, `targetSdk = 34`, `minSdk = 30`
 * `core` exposes `androidx.core:core-ktx`
 * `ml` depends on `core` and ONNX Runtime
-* Maven publishing:
 
-  * `groupId`: `com.github.dev-diaries41`
-  * `artifactId`: `core` or `ml`
-  * `version`: configurable (`publishVersion`, default `1.0.0`)
-  
  ---
