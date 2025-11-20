@@ -30,10 +30,6 @@ class FileEmbeddingStore(
 
     override val exists: Boolean get() = file.exists()
 
-    override val isCached: Boolean
-        get() = cache != null
-
-
     // prevent OOM in FileEmbeddingStore.save() by batching writes
     private suspend fun save(embeddingsList: List<Embedding>): Unit = withContext(Dispatchers.IO) {
         if (embeddingsList.isEmpty()) return@withContext
