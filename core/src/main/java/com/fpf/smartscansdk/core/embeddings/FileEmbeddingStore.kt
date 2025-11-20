@@ -97,6 +97,19 @@ class FileEmbeddingStore(
         }
     }
 
+    suspend fun get(ids: List<Long>): List<Embedding> = withContext(Dispatchers.IO) {
+        val map = cache ?: run {
+            val all = get()
+            LinkedHashMap(all.associateBy { it.id })
+        }
+        val embeddings = mutableListOf<Embedding>()
+
+        for (id in ids) {
+            map.get(id)?.let { embeddings.add(it) }
+        }
+        embeddings
+    }
+
     override suspend fun add(newEmbeddings: List<Embedding>): Unit = withContext(Dispatchers.IO) {
         if (newEmbeddings.isEmpty()) return@withContext
 
@@ -183,26 +196,6 @@ class FileEmbeddingStore(
         }
     }
 
-    suspend fun get(ids: List<Long>): List<Embedding> = withContext(Dispatchers.IO) {
-        val map = cache ?: run {
-            val all = get()
-            LinkedHashMap(all.associateBy { it.id })
-        }
-        val embeddings = mutableListOf<Embedding>()
-
-        for (id in ids) {
-            map.get(id)?.let { embeddings.add(it) }
-        }
-        embeddings
-    }
-
-    suspend fun get(id: Long): Embedding? = withContext(Dispatchers.IO) {
-        val map = cache ?: run {
-            val all = get()
-            LinkedHashMap(all.associateBy { it.id })
-        }
-        map.get(id)
-    }
 
     override fun clear(){
         cache = null
