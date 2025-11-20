@@ -9,4 +9,10 @@ interface IEmbeddingStore {
     suspend fun remove(ids: List<Long>)
     suspend fun get(): List<Embedding>
     fun clear()
+
+    suspend fun query(
+        embedding: FloatArray,
+        topK: Int,
+        threshold: Float
+    ): List<Embedding>
 }
