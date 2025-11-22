@@ -25,7 +25,7 @@ class MiniLMTextEmbedder(
         is ResourceId -> OnnxModel(ResourceOnnxLoader(context.resources, modelSource.resId))
     }
 
-    private var tokenizer = SimpleTokenizer.fromRawResources(context, R.raw.minilm_vocab,  R.raw.minilm_tokenizer_config)
+    private var tokenizer = MiniLmTokenizer.fromRawResources(context, R.raw.minilm_vocab,  R.raw.minilm_tokenizer_config)
     private var closed = false
     override val embeddingDim: Int = 384 // MiniLM-L6-v2 dimension
 

@@ -7,7 +7,7 @@ import org.json.JSONObject
 import java.io.InputStreamReader
 import kotlin.collections.toLongArray
 
-class SimpleTokenizer(
+class MiniLmTokenizer(
     private val vocab: Map<String, Int>,
     private val maxLen: Int,
     private val doLowerCase: Boolean,
@@ -18,7 +18,7 @@ class SimpleTokenizer(
 ) {
 
     companion object {
-         fun fromRawResources(context: Context, vocabResId: Int, configResId: Int): SimpleTokenizer {
+         fun fromRawResources(context: Context, vocabResId: Int, configResId: Int): MiniLmTokenizer {
                 // Load vocab
                 val vocabMap: Map<String, Int> = context.resources.openRawResource(vocabResId)
                     .bufferedReader()
@@ -31,7 +31,7 @@ class SimpleTokenizer(
                 }
                 val configJson = JSONObject(configText)
 
-                return SimpleTokenizer(
+                return MiniLmTokenizer(
                     vocab = vocabMap,
                     maxLen = configJson.optInt("max_length", 128),
                     doLowerCase = configJson.optBoolean("do_lower_case", true),
